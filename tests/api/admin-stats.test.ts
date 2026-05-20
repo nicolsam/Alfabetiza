@@ -17,7 +17,7 @@ vi.mock('@/lib/db', () => ({
   prisma: {
     school: { count: mockCountSchool },
     student: { count: mockCountStudent },
-    studentReadingHistory: { count: mockCountHistory },
+    studentAssessment: { count: mockCountHistory },
     userSession: { count: mockCountSession },
   },
 }))

@@ -5,13 +5,11 @@ const {
   mockFindUserSchools,
   mockFindStudents,
   mockFindLevels,
-  mockFindHistory,
 } = vi.hoisted(() => ({
   mockVerifyToken: vi.fn(),
   mockFindUserSchools: vi.fn(),
   mockFindStudents: vi.fn(),
   mockFindLevels: vi.fn(),
-  mockFindHistory: vi.fn(),
 }))
 
 vi.mock('@/lib/auth', () => ({
@@ -22,21 +20,20 @@ vi.mock('@/lib/db', () => ({
   prisma: {
     userSchool: { findMany: mockFindUserSchools },
     student: { findMany: mockFindStudents },
-    readingLevel: { findMany: mockFindLevels },
-    studentReadingHistory: { findMany: mockFindHistory },
+    assessmentLevel: { findMany: mockFindLevels },
   },
 }))
 
 import { GET as getDashboard } from '../../src/app/api/dashboard/route'
 
 const levels = [
-  { id: 'level-dni', code: 'DNI', name: 'Does Not Identify', order: 1 },
-  { id: 'level-lo', code: 'LO', name: 'Letters Only', order: 2 },
-  { id: 'level-so', code: 'SO', name: 'Syllables Only', order: 3 },
-  { id: 'level-rw', code: 'RW', name: 'Reads Words', order: 4 },
-  { id: 'level-rs', code: 'RS', name: 'Reads Sentences', order: 5 },
-  { id: 'level-rts', code: 'RTS', name: 'Reads Text Syllabically', order: 6 },
-  { id: 'level-rtf', code: 'RTF', name: 'Reads Text Fluently', order: 7 },
+  { id: 'level-dni', code: 'DNI', name: 'Does Not Identify', order: 1, isAttention: true },
+  { id: 'level-lo', code: 'LO', name: 'Letters Only', order: 2, isAttention: true },
+  { id: 'level-so', code: 'SO', name: 'Syllables Only', order: 3, isAttention: true },
+  { id: 'level-rw', code: 'RW', name: 'Reads Words', order: 4, isAttention: false },
+  { id: 'level-rs', code: 'RS', name: 'Reads Sentences', order: 5, isAttention: false },
+  { id: 'level-rts', code: 'RTS', name: 'Reads Text Syllabically', order: 6, isAttention: false },
+  { id: 'level-rtf', code: 'RTF', name: 'Reads Text Fluently', order: 7, isAttention: false },
 ]
 
 function createStudent(id: string, code: string, recordedAt = new Date('2026-04-10T12:00:00.000Z')) {
@@ -54,7 +51,7 @@ function createStudent(id: string, code: string, recordedAt = new Date('2026-04-
         school: { name: 'Test School' },
       },
     }],
-    readingHistory: [{ readingLevelId: level.id, readingLevel: level, recordedAt }],
+    assessments: [{ assessmentLevelId: level.id, assessmentLevel: level, recordedAt }],
   }
 }
 
@@ -64,11 +61,11 @@ function createStudentWithHistory(
 ) {
   return {
     ...createStudent(id, history[0].code, history[0].recordedAt),
-    readingHistory: history.map((entry) => {
+    assessments: history.map((entry) => {
       const level = levels.find((item) => item.code === entry.code)!
       return {
-        readingLevelId: level.id,
-        readingLevel: level,
+        assessmentLevelId: level.id,
+        assessmentLevel: level,
         recordedAt: entry.recordedAt,
         createdAt: entry.createdAt || entry.recordedAt,
       }
@@ -83,7 +80,6 @@ describe('API: /api/dashboard GET', () => {
     mockVerifyToken.mockReturnValue({ id: 'teacher-1', email: 'teacher@test.com' })
     mockFindUserSchools.mockResolvedValue([{ schoolId: 'school-1' }])
     mockFindLevels.mockResolvedValue(levels)
-    mockFindHistory.mockResolvedValue([])
   })
 
   it('counts DNI, LO, and SO students as needing attention', async () => {
@@ -130,7 +126,7 @@ describe('API: /api/dashboard GET', () => {
     mockFindStudents.mockResolvedValue([
       createStudent('student-1', 'RW', new Date('2026-04-10T12:00:00.000Z')),
       createStudent('student-2', 'RS', new Date('2026-03-10T12:00:00.000Z')),
-      { ...createStudent('student-3', 'RTS'), readingHistory: [] },
+      { ...createStudent('student-3', 'RTS'), assessments: [] },
     ])
 
     const request = new Request('http://localhost/api/dashboard?month=04/2026', {

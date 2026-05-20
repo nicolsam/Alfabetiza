@@ -6,7 +6,7 @@ const { mockFindLevels } = vi.hoisted(() => ({
 
 vi.mock('@/lib/db', () => ({
   prisma: {
-    readingLevel: { findMany: mockFindLevels },
+    assessmentLevel: { findMany: mockFindLevels },
   },
 }))
 
@@ -30,7 +30,13 @@ describe('API: /api/levels GET', () => {
 
     expect(response.status).toBe(200)
     expect(data).toEqual(levels)
-    expect(mockFindLevels).toHaveBeenCalledWith({ orderBy: { order: 'asc' } })
+    expect(mockFindLevels).toHaveBeenCalledWith({
+      where: {
+        assessmentType: { code: 'READING' },
+        isActive: true,
+      },
+      orderBy: { order: 'asc' },
+    })
   })
 
   it('returns 500 when the database query fails', async () => {

@@ -8,7 +8,7 @@ vi.mock('@/lib/db', () => ({
     user: { findUnique: vi.fn() },
     student: { findUnique: vi.fn() },
     userSchool: { findUnique: vi.fn() },
-    studentReadingHistory: { findMany: vi.fn() },
+    studentAssessment: { findMany: vi.fn() },
     studentCommentary: { findMany: vi.fn() },
   }
 }))
@@ -80,15 +80,17 @@ describe('GET /api/students/[id]/history', () => {
       school: { id: 'school-1', name: 'Test School' }
     } as never)
     vi.mocked(prisma.userSchool.findUnique).mockResolvedValue({} as never)
-    vi.mocked(prisma.studentReadingHistory.findMany).mockResolvedValue([
+    vi.mocked(prisma.studentAssessment.findMany).mockResolvedValue([
       {
         id: 'h1', recordedAt: new Date(), notes: 'Good progress',
-        readingLevel: { code: 'RW', name: 'Reads Words', order: 4 },
+        assessmentLevelId: 'level-rw',
+        assessmentLevel: { code: 'RW', name: 'Reads Words', order: 4 },
         user: { name: 'Teacher A' }
       },
       {
         id: 'h2', recordedAt: new Date(), notes: null,
-        readingLevel: { code: 'LO', name: 'Letters Only', order: 2 },
+        assessmentLevelId: 'level-lo',
+        assessmentLevel: { code: 'LO', name: 'Letters Only', order: 2 },
         user: { name: 'Teacher A' }
       },
     ] as never)
@@ -114,7 +116,7 @@ describe('GET /api/students/[id]/history', () => {
       school: { id: 'school-1', name: 'Test School' }
     } as never)
     vi.mocked(prisma.userSchool.findUnique).mockResolvedValue({} as never)
-    vi.mocked(prisma.studentReadingHistory.findMany).mockResolvedValue([])
+    vi.mocked(prisma.studentAssessment.findMany).mockResolvedValue([])
     vi.mocked(prisma.studentCommentary.findMany).mockResolvedValue([])
 
     const res = await GET(mockRequest(), { params: Promise.resolve({ id: 'student-1' }) })

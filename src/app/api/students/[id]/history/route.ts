@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { forbiddenResponse, hasSchoolAccess, isAuthFailure, requireAuth } from '@/lib/permissions'
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -30,14 +31,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       } 
     }
 
-    const history = await prisma.studentReadingHistory.findMany({
-      where: { studentId: id },
+    const assessments = await prisma.studentAssessment.findMany({
+      where: {
+        studentId: id,
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+      },
       orderBy: [
         { recordedAt: 'desc' },
         { createdAt: 'desc' },
       ],
       include: {
-        readingLevel: true,
+        assessmentLevel: true,
         user: { select: userSelect },
       },
     })
@@ -60,7 +64,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({
       student,
-      history: history.map((entry) => ({ ...entry, teacher: mapTeacher(entry.user) })),
+      history: assessments.map((entry) => ({
+        ...entry,
+        readingLevelId: entry.assessmentLevelId,
+        readingLevel: entry.assessmentLevel,
+        teacher: mapTeacher(entry.user),
+      })),
       commentaries: commentaries.map((entry: any) => ({ ...entry, teacher: mapTeacher(entry.user) })),
     })
   } catch (error) {

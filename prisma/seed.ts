@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 import { PrismaClient } from '@prisma/client'
+import { READING_ASSESSMENT_TYPE_CODE, READING_LEVEL_METADATA } from '../src/lib/assessments'
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aleno?schema=public'
 console.log('Connection URL:', DATABASE_URL)
@@ -10,6 +11,25 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
+  const readingAssessmentType = await prisma.assessmentType.upsert({
+    where: { code: READING_ASSESSMENT_TYPE_CODE },
+    update: {
+      name: 'Reading',
+      description: 'Reading level tracking',
+      displayOrder: 1,
+      isActive: true,
+      monthlyTrackingEnabled: true,
+    },
+    create: {
+      code: READING_ASSESSMENT_TYPE_CODE,
+      name: 'Reading',
+      description: 'Reading level tracking',
+      displayOrder: 1,
+      isActive: true,
+      monthlyTrackingEnabled: true,
+    },
+  })
+
   const levels = [
     { code: 'DNI', name: 'Does Not Identify', order: 1, description: 'Student does not identify letters' },
     { code: 'LO', name: 'Letters Only', order: 2, description: 'Student recognizes letters only' },
@@ -21,10 +41,32 @@ async function main() {
   ]
 
   for (const level of levels) {
-    await prisma.readingLevel.upsert({
-      where: { code: level.code },
-      update: level,
-      create: level,
+    const metadata = READING_LEVEL_METADATA[level.code as keyof typeof READING_LEVEL_METADATA]
+
+    await prisma.assessmentLevel.upsert({
+      where: {
+        assessmentTypeId_code: {
+          assessmentTypeId: readingAssessmentType.id,
+          code: level.code,
+        },
+      },
+      update: {
+        ...level,
+        isAttention: metadata.isAttention,
+        color: metadata.style.color,
+        backgroundColor: metadata.style.backgroundColor,
+        textColor: metadata.style.textColor,
+        isActive: true,
+      },
+      create: {
+        ...level,
+        assessmentTypeId: readingAssessmentType.id,
+        isAttention: metadata.isAttention,
+        color: metadata.style.color,
+        backgroundColor: metadata.style.backgroundColor,
+        textColor: metadata.style.textColor,
+        isActive: true,
+      },
     })
   }
 

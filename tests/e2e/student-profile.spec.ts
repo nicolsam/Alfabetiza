@@ -10,7 +10,7 @@ const ENROLLMENT_ID = 'e2e-profile-enrollment'
 
 async function cleanupFixtures() {
   await prisma.studentCommentary.deleteMany({ where: { studentId: STUDENT_ID } })
-  await prisma.studentReadingHistory.deleteMany({ where: { studentId: STUDENT_ID } })
+  await prisma.studentAssessment.deleteMany({ where: { studentId: STUDENT_ID } })
   await prisma.studentEnrollment.deleteMany({ where: { studentId: STUDENT_ID } })
   await prisma.student.deleteMany({ where: { id: STUDENT_ID } })
   await prisma.class.deleteMany({ where: { id: CLASS_ID } })
@@ -22,16 +22,22 @@ async function seedFixtures() {
   const teacher = await prisma.user.findUnique({ where: { email: TEACHER_EMAIL } })
   if (!teacher) throw new Error(`Missing E2E teacher: ${TEACHER_EMAIL}`)
 
-  const level1 = await prisma.readingLevel.upsert({
-    where: { code: 'LO' },
-    update: { name: 'Letters Only', order: 2 },
-    create: { code: 'LO', name: 'Letters Only', order: 2 },
+  const readingType = await prisma.assessmentType.upsert({
+    where: { code: 'READING' },
+    update: { name: 'Reading', displayOrder: 1 },
+    create: { code: 'READING', name: 'Reading', displayOrder: 1 },
   })
 
-  const level2 = await prisma.readingLevel.upsert({
-    where: { code: 'RW' },
+  const level1 = await prisma.assessmentLevel.upsert({
+    where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'LO' } },
+    update: { name: 'Letters Only', order: 2, isAttention: true },
+    create: { assessmentTypeId: readingType.id, code: 'LO', name: 'Letters Only', order: 2, isAttention: true },
+  })
+
+  await prisma.assessmentLevel.upsert({
+    where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'RW' } },
     update: { name: 'Reads Words', order: 4 },
-    create: { code: 'RW', name: 'Reads Words', order: 4 },
+    create: { assessmentTypeId: readingType.id, code: 'RW', name: 'Reads Words', order: 4 },
   })
 
   await prisma.school.create({
@@ -68,12 +74,13 @@ async function seedFixtures() {
     },
   })
 
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-profile-history',
       studentId: STUDENT_ID,
       enrollmentId: ENROLLMENT_ID,
-      readingLevelId: level1.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: level1.id,
       userId: teacher.id,
       recordedAt: new Date('2026-05-01T12:00:00.000Z'),
     },

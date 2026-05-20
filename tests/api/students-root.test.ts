@@ -101,7 +101,7 @@ describe('API: /api/students', () => {
     expect(mockFindUserSchool).not.toHaveBeenCalled()
     expect(mockFindStudents).toHaveBeenCalledWith(expect.objectContaining({
       include: expect.objectContaining({
-        readingHistory: expect.not.objectContaining({
+        assessments: expect.objectContaining({
           where: expect.anything(),
         }),
       }),
@@ -126,14 +126,14 @@ describe('API: /api/students', () => {
       {
         id: 'student-1',
         name: 'Student 1',
-        readingHistory: [{ id: 'history-1', recordedAt: new Date('2026-04-10T12:00:00.000Z') }],
+        assessments: [{ id: 'history-1', assessmentLevelId: 'level-1', assessmentLevel: {}, recordedAt: new Date('2026-04-10T12:00:00.000Z') }],
       },
       {
         id: 'student-2',
         name: 'Student 2',
-        readingHistory: [{ id: 'history-2', recordedAt: new Date('2026-03-10T12:00:00.000Z') }],
+        assessments: [{ id: 'history-2', assessmentLevelId: 'level-2', assessmentLevel: {}, recordedAt: new Date('2026-03-10T12:00:00.000Z') }],
       },
-      { id: 'student-3', name: 'Student 3', readingHistory: [] },
+      { id: 'student-3', name: 'Student 3', assessments: [] },
     ])
 
     const response = await GET(createRequest('http://localhost/api/students?month=04/2026'))

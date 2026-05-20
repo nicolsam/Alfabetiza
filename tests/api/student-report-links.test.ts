@@ -15,7 +15,7 @@ vi.mock('@/lib/db', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
-    studentReadingHistory: { findMany: vi.fn() },
+    studentAssessment: { findMany: vi.fn() },
     studentCommentary: { findMany: vi.fn() },
     auditLog: { create: vi.fn() },
   },
@@ -124,7 +124,7 @@ describe('public student parent reports', () => {
     } as never)
 
     await expect(getStudentParentReportByToken('token', new Date('2026-05-03T12:00:00.000Z'))).resolves.toBeNull()
-    expect(prisma.studentReadingHistory.findMany).not.toHaveBeenCalled()
+    expect(prisma.studentAssessment.findMany).not.toHaveBeenCalled()
   })
 
   it('returns live student history for valid report links', async () => {
@@ -149,12 +149,12 @@ describe('public student parent reports', () => {
       },
     } as never)
     vi.mocked(prisma.studentParentReportLink.update).mockResolvedValue({} as never)
-    vi.mocked(prisma.studentReadingHistory.findMany).mockResolvedValue([
+    vi.mocked(prisma.studentAssessment.findMany).mockResolvedValue([
       {
         id: 'history-1',
         recordedAt: new Date('2026-05-03T12:00:00.000Z'),
         notes: 'Good progress',
-        readingLevel: { code: 'RW', name: 'Reads Words', order: 4 },
+        assessmentLevel: { code: 'RW', name: 'Reads Words', order: 4 },
         user: { name: 'Teacher' },
       },
     ] as never)

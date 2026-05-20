@@ -36,13 +36,23 @@ export const mockPrisma = {
     updateMany: vi.fn(),
     deleteMany: vi.fn(),
   },
-  readingLevel: {
+  assessmentType: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
   },
-  studentReadingHistory: {
+  assessmentLevel: {
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+  },
+  studentAssessment: {
     create: vi.fn(),
     findMany: vi.fn(),
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    count: vi.fn(),
   },
 }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { logAction } from '@/lib/audit'
 import { getEnrollmentForDate } from '@/lib/enrollments'
 import { parseDateInput } from '@/lib/monthly-updates'
@@ -29,6 +30,22 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Future assessment dates are not allowed' }, { status: 400 })
     }
 
+    const readingLevel = await prisma.assessmentLevel.findFirst({
+      where: {
+        id: readingLevelId,
+        isActive: true,
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+      },
+      include: { assessmentType: true },
+    })
+
+    if (!readingLevel) {
+      return NextResponse.json({
+        error: 'Invalid reading level',
+        details: { readingLevelId, expectedAssessmentType: READING_ASSESSMENT_TYPE_CODE },
+      }, { status: 400 })
+    }
+
     const student = await prisma.student.findUnique({
       where: { id: studentId },
       include: {
@@ -53,19 +70,27 @@ export async function PATCH(request: Request) {
       }, { status: 400 })
     }
 
-    const history = await prisma.studentReadingHistory.create({
+    const assessment = await prisma.studentAssessment.create({
       data: {
         studentId,
         enrollmentId: enrollment.id,
-        readingLevelId,
+        assessmentTypeId: readingLevel.assessmentTypeId,
+        assessmentLevelId: readingLevelId,
         userId: auth.user.id,
         recordedAt: assessmentDate,
         notes: body.notes || null,
       },
+      include: { assessmentLevel: true },
     })
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Unknown'
     await logAction(auth.user.id, 'UPDATE_STUDENT_LEVEL', { studentId, readingLevelId }, ipAddress)
+
+    const history = {
+      ...assessment,
+      readingLevelId: assessment.assessmentLevelId,
+      readingLevel: assessment.assessmentLevel,
+    }
 
     return NextResponse.json({ history })
   } catch (error) {

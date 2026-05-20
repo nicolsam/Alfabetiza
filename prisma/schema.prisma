@@ -53,7 +53,7 @@ model User {
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   schools            UserSchool[]
-  readingRecords     StudentReadingHistory[]
+  assessmentRecords  StudentAssessment[]
   sessions           UserSession[]
   auditLogs          AuditLog[]
   createdInvites     UserInvite[]              @relation("InviteCreator")
@@ -138,7 +138,7 @@ model Student {
   school            School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   class             Class                     @relation(fields: [classId], references: [id], onDelete: Cascade)
   enrollments       StudentEnrollment[]
-  readingHistory    StudentReadingHistory[]
+  assessments       StudentAssessment[]
   contacts          StudentContact[]
   parentReportLinks StudentParentReportLink[]
   commentaries      StudentCommentary[]
@@ -176,41 +176,71 @@ model StudentEnrollment {
 
   student        Student                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
   class          Class                   @relation(fields: [classId], references: [id], onDelete: Cascade)
-  readingHistory StudentReadingHistory[]
+  assessments    StudentAssessment[]
 
   @@index([studentId])
   @@index([classId])
   @@map("student_enrollments")
 }
 
-model ReadingLevel {
-  id          String  @id @default(uuid())
-  name        String
-  code        String  @unique
-  order       Int
-  description String?
+model AssessmentType {
+  id                     String   @id @default(uuid())
+  code                   String   @unique
+  name                   String
+  description            String?
+  displayOrder           Int      @map("display_order")
+  isActive               Boolean  @default(true) @map("is_active")
+  monthlyTrackingEnabled Boolean  @default(true) @map("monthly_tracking_enabled")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
 
-  history StudentReadingHistory[]
+  levels      AssessmentLevel[]
+  assessments StudentAssessment[]
 
-  @@map("reading_levels")
+  @@map("assessment_types")
 }
 
-model StudentReadingHistory {
-  id             String   @id @default(uuid())
-  studentId      String   @map("student_id")
-  enrollmentId   String   @map("enrollment_id")
-  readingLevelId String   @map("reading_level_id")
-  userId         String   @map("user_id")
-  recordedAt     DateTime @default(now()) @map("recorded_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  notes          String?
+model AssessmentLevel {
+  id               String  @id @default(uuid())
+  assessmentTypeId String  @map("assessment_type_id")
+  name             String
+  code             String
+  order            Int
+  description      String?
+  isAttention      Boolean @default(false) @map("is_attention")
+  color            String  @default("#6B7280")
+  backgroundColor  String  @default("#F3F4F6") @map("background_color")
+  textColor        String  @default("#374151") @map("text_color")
+  isActive         Boolean @default(true) @map("is_active")
 
-  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  enrollment   StudentEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  readingLevel ReadingLevel      @relation(fields: [readingLevelId], references: [id])
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessmentType AssessmentType      @relation(fields: [assessmentTypeId], references: [id], onDelete: Cascade)
+  assessments    StudentAssessment[]
 
-  @@map("student_reading_history")
+  @@unique([assessmentTypeId, code])
+  @@unique([assessmentTypeId, order])
+  @@map("assessment_levels")
+}
+
+model StudentAssessment {
+  id                String   @id @default(uuid())
+  studentId         String   @map("student_id")
+  enrollmentId      String   @map("enrollment_id")
+  assessmentTypeId  String   @map("assessment_type_id")
+  assessmentLevelId String   @map("assessment_level_id")
+  userId            String   @map("user_id")
+  recordedAt        DateTime @default(now()) @map("recorded_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  notes             String?
+
+  student         Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollment      StudentEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  assessmentType  AssessmentType    @relation(fields: [assessmentTypeId], references: [id], onDelete: Cascade)
+  assessmentLevel AssessmentLevel   @relation(fields: [assessmentLevelId], references: [id])
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, assessmentTypeId, recordedAt, createdAt])
+  @@index([assessmentTypeId, assessmentLevelId])
+  @@map("student_assessments")
 }
 
 model StudentParentReportLink {
