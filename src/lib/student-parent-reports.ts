@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { hashStudentReportToken } from '@/lib/student-report-links'
 
 export type StudentParentReport = {
@@ -73,11 +74,14 @@ export async function getStudentParentReportByToken(
   }
 
   const [history, commentaries] = await Promise.all([
-    prisma.studentReadingHistory.findMany({
-      where: { studentId: reportLink.studentId },
+    prisma.studentAssessment.findMany({
+      where: {
+        studentId: reportLink.studentId,
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+      },
       orderBy: [{ recordedAt: 'desc' }, { createdAt: 'desc' }],
       include: {
-        readingLevel: { select: { code: true, name: true, order: true } },
+        assessmentLevel: { select: { code: true, name: true, order: true } },
         user: { select: userSelect },
       },
     }),
@@ -104,7 +108,11 @@ export async function getStudentParentReportByToken(
       school: { id: reportLink.student.school.id, name: reportLink.student.school.name },
       class: reportLink.student.class,
     },
-    history: history.map((entry) => ({ ...entry, teacher: mapTeacher(entry.user) })),
+    history: history.map((entry) => ({
+      ...entry,
+      readingLevel: entry.assessmentLevel,
+      teacher: mapTeacher(entry.user),
+    })),
     commentaries: commentaries.map((entry) => ({ ...entry, teacher: mapTeacher(entry.user) })),
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { isAttentionReadingLevel } from '@/lib/reading-levels'
+import { isAttentionAssessmentLevel, READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { getAccessibleSchoolIds, isAuthFailure, requireAuth } from '@/lib/permissions'
 import {
   getLatestAssessmentDate,
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       })
     }
 
-    const students = await prisma.student.findMany({
+    const rawStudents = await prisma.student.findMany({
       where: { 
         schoolId: { in: schoolIds },
         deletedAt: null,
@@ -77,18 +77,32 @@ export async function GET(request: Request) {
           include: { class: { include: { school: true } } },
           orderBy: { startedAt: 'desc' },
         },
-        readingHistory: {
+        assessments: {
+          where: { assessmentType: { code: READING_ASSESSMENT_TYPE_CODE } },
           orderBy: [
             { recordedAt: 'desc' },
             { createdAt: 'desc' },
           ],
-          include: { readingLevel: true },
+          include: { assessmentLevel: true },
         },
         school: true,
       },
     })
 
-    const levels = await prisma.readingLevel.findMany({
+    const students = rawStudents.map((student) => ({
+      ...student,
+      readingHistory: (student.assessments || []).map((assessment) => ({
+        ...assessment,
+        readingLevelId: assessment.assessmentLevelId,
+        readingLevel: assessment.assessmentLevel,
+      })),
+    }))
+
+    const levels = await prisma.assessmentLevel.findMany({
+      where: {
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+        isActive: true,
+      },
       orderBy: { order: 'asc' },
     })
 
@@ -105,7 +119,7 @@ export async function GET(request: Request) {
     })
 
     const needAttention = students
-      .filter((s) => isAttentionReadingLevel(s.readingHistory[0]?.readingLevel.code))
+      .filter((s) => isAttentionAssessmentLevel(s.readingHistory[0]?.readingLevel))
       .map((s) => ({
         id: s.id,
         name: s.name,

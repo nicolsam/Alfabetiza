@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { logAction } from '@/lib/audit'
 import { getAcademicYearStartDate, parseAcademicYear } from '@/lib/enrollments'
 import { forbiddenResponse, getAccessibleSchoolIds, isAuthFailure, isCoordinatorForSchool, requireAuth } from '@/lib/permissions'
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
     if (section) classFilters.section = section
     if (shift) classFilters.shift = shift
 
-    const students = await prisma.student.findMany({
+    const rawStudents = await prisma.student.findMany({
       where: {
         schoolId: { in: validSchoolIds },
         deletedAt: null,
@@ -63,15 +64,25 @@ export async function GET(request: Request) {
           include: { class: true },
           orderBy: { startedAt: 'desc' },
         },
-        readingHistory: {
+        assessments: {
+          where: { assessmentType: { code: READING_ASSESSMENT_TYPE_CODE } },
           orderBy: [
             { recordedAt: 'desc' },
             { createdAt: 'desc' },
           ],
-          include: { readingLevel: true },
+          include: { assessmentLevel: true },
         },
       },
     })
+
+    const students = rawStudents.map((student) => ({
+      ...student,
+      readingHistory: (student.assessments || []).map((assessment) => ({
+        ...assessment,
+        readingLevelId: assessment.assessmentLevelId,
+        readingLevel: assessment.assessmentLevel,
+      })),
+    }))
 
     const studentsWithMonthlyStatus = students.map((student) => {
       const selectedEnrollment = student.enrollments?.[0] || null

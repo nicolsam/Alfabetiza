@@ -12,7 +12,7 @@ export interface MonthInfo {
   range: MonthRange
 }
 
-export interface ReadingAssessmentDate {
+export interface AssessmentDate {
   recordedAt: Date | string
 }
 
@@ -186,16 +186,23 @@ export function isDateInMonth(date: Date | string | undefined, range: MonthRange
   return assessmentDate >= range.start && assessmentDate < range.end
 }
 
-export function hasMonthlyReadingUpdate(
-  readingHistory: ReadingAssessmentDate[] | undefined,
+export function hasMonthlyAssessmentUpdate(
+  assessments: AssessmentDate[] | undefined,
   range: MonthRange
 ): boolean {
-  return !!readingHistory?.some((record) => isDateInMonth(record.recordedAt, range))
+  return !!assessments?.some((record) => isDateInMonth(record.recordedAt, range))
 }
 
-export function getLatestAssessmentDate(
-  readingHistory: ReadingAssessmentDate[] | undefined
-): string | null {
-  const latestDate = readingHistory?.[0]?.recordedAt
+export function getLatestAssessmentDate(assessments: AssessmentDate[] | undefined): string | null {
+  const latestDate = assessments?.[0]?.recordedAt
   return latestDate ? new Date(latestDate).toISOString() : null
+}
+
+export type ReadingAssessmentDate = AssessmentDate
+
+export function hasMonthlyReadingUpdate(
+  readingHistory: AssessmentDate[] | undefined,
+  range: MonthRange
+): boolean {
+  return hasMonthlyAssessmentUpdate(readingHistory, range)
 }

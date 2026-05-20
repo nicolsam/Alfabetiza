@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { logAction } from '@/lib/audit'
 import { requireAuth, isAuthFailure } from '@/lib/permissions'
 
@@ -12,8 +13,11 @@ export async function DELETE(
   if (isAuthFailure(auth)) return auth.error
 
   try {
-    const entry = await prisma.studentReadingHistory.findUnique({
-      where: { id: historyId },
+    const entry = await prisma.studentAssessment.findFirst({
+      where: {
+        id: historyId,
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+      },
     })
 
     if (!entry) {
@@ -30,7 +34,7 @@ export async function DELETE(
       }
     }
 
-    await prisma.studentReadingHistory.delete({
+    await prisma.studentAssessment.delete({
       where: { id: historyId },
     })
 
@@ -53,8 +57,11 @@ export async function PUT(
   if (isAuthFailure(auth)) return auth.error
 
   try {
-    const entry = await prisma.studentReadingHistory.findUnique({
-      where: { id: historyId },
+    const entry = await prisma.studentAssessment.findFirst({
+      where: {
+        id: historyId,
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+      },
     })
 
     if (!entry) {
@@ -82,19 +89,41 @@ export async function PUT(
     const body = await request.json()
     const { readingLevelId, recordedAt, notes } = body
 
-    const updated = await prisma.studentReadingHistory.update({
+    if (readingLevelId) {
+      const readingLevel = await prisma.assessmentLevel.findFirst({
+        where: {
+          id: readingLevelId,
+          isActive: true,
+          assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+        },
+      })
+
+      if (!readingLevel) {
+        return NextResponse.json({
+          error: 'Invalid reading level',
+          details: { readingLevelId, expectedAssessmentType: READING_ASSESSMENT_TYPE_CODE },
+        }, { status: 400 })
+      }
+    }
+
+    const updated = await prisma.studentAssessment.update({
       where: { id: historyId },
       data: {
-        readingLevelId: readingLevelId || undefined,
+        assessmentLevelId: readingLevelId || undefined,
         recordedAt: recordedAt ? new Date(recordedAt) : undefined,
         notes: notes !== undefined ? notes : undefined,
       },
+      include: { assessmentLevel: true },
     })
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Unknown'
     await logAction(auth.user.id, 'UPDATE_HISTORY', { studentId, historyId, readingLevelId }, ipAddress)
 
-    return NextResponse.json(updated)
+    return NextResponse.json({
+      ...updated,
+      readingLevelId: updated.assessmentLevelId,
+      readingLevel: updated.assessmentLevel,
+    })
   } catch (error) {
     console.error('Update history error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

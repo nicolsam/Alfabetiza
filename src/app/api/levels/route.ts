@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 
 export async function GET() {
   try {
-    const levels = await prisma.readingLevel.findMany({
+    const levels = await prisma.assessmentLevel.findMany({
+      where: {
+        assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
+        isActive: true,
+      },
       orderBy: { order: 'asc' },
     })
     return NextResponse.json(levels)

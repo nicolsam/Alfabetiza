@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
     const totalSchools = await prisma.school.count({ where: { deletedAt: null } })
     const totalStudents = await prisma.student.count({ where: { deletedAt: null, school: { deletedAt: null } } })
-    const totalAssessments = await prisma.studentReadingHistory.count()
+    const totalAssessments = await prisma.studentAssessment.count()
     
     // Active sessions within last 5 minutes
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)

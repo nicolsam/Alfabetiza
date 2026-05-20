@@ -27,13 +27,19 @@ const LEVEL_CODES_BY_ORDER: Record<number, string> = {
   7: 'RTF',
 }
 
-export function buildReadingLevelAxisLabels(translateLevel: (code: string) => string): Record<number, string> {
-  return Object.fromEntries(
-    Object.entries(LEVEL_CODES_BY_ORDER).map(([order, code]) => [Number(order), translateLevel(code)])
-  )
+export function buildAssessmentLevelAxisLabels(
+  levels: { code: string; order: number }[],
+  translateLevel: (code: string) => string
+): Record<number, string> {
+  return Object.fromEntries(levels.map((level) => [level.order, translateLevel(level.code)]))
 }
 
-export function buildStudentProgressChartData(
+export function buildReadingLevelAxisLabels(translateLevel: (code: string) => string): Record<number, string> {
+  const levels = Object.entries(LEVEL_CODES_BY_ORDER).map(([order, code]) => ({ order: Number(order), code }))
+  return buildAssessmentLevelAxisLabels(levels, translateLevel)
+}
+
+export function buildStudentAssessmentProgressChartData(
   history: StudentProgressHistoryEntry[],
   locale: string,
   translateLevel: (code: string) => string
@@ -51,4 +57,12 @@ export function buildStudentProgressChartData(
     code: entry.readingLevel.code,
     notes: entry.notes,
   }))
+}
+
+export function buildStudentProgressChartData(
+  history: StudentProgressHistoryEntry[],
+  locale: string,
+  translateLevel: (code: string) => string
+): StudentProgressChartPoint[] {
+  return buildStudentAssessmentProgressChartData(history, locale, translateLevel)
 }

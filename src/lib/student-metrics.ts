@@ -1,4 +1,4 @@
-import { isAttentionReadingLevel } from '@/lib/reading-levels'
+import { isAttentionAssessmentLevel } from '@/lib/assessments'
 import { getMonthRange } from '@/lib/monthly-updates'
 
 export interface StudentMetricReadingHistoryEntry {
@@ -7,6 +7,7 @@ export interface StudentMetricReadingHistoryEntry {
   readingLevel: {
     code?: string | null
     order: number
+    isAttention?: boolean | null
   }
 }
 
@@ -45,7 +46,7 @@ function sortReadingHistory(
 
 export function countStudentsNeedingAttention(students: StudentMetricRecord[]): number {
   return students.filter((student) => (
-    isAttentionReadingLevel(student.readingHistory?.[0]?.readingLevel.code ?? undefined)
+    isAttentionAssessmentLevel(student.readingHistory?.[0]?.readingLevel)
   )).length
 }
 
