@@ -24,7 +24,7 @@ async function cleanupFixtures() {
 
   await prisma.studentParentReportLink.deleteMany({ where: { studentId: STUDENT_ID } })
   await prisma.studentContact.deleteMany({ where: { studentId: STUDENT_ID } })
-  await prisma.studentReadingHistory.deleteMany({ where: { studentId: STUDENT_ID } })
+  await prisma.studentAssessment.deleteMany({ where: { studentId: STUDENT_ID } })
   await prisma.studentEnrollment.deleteMany({ where: { studentId: STUDENT_ID } })
   await prisma.student.deleteMany({ where: { id: STUDENT_ID } })
   await prisma.class.deleteMany({ where: { id: CLASS_ID } })
@@ -36,10 +36,16 @@ async function seedFixtures() {
   const teacher = await prisma.user.findUnique({ where: { email: TEACHER_EMAIL } })
   if (!teacher) throw new Error(`Missing E2E teacher: ${TEACHER_EMAIL}`)
 
-  const level = await prisma.readingLevel.upsert({
-    where: { code: 'RW' },
+  const readingType = await prisma.assessmentType.upsert({
+    where: { code: 'READING' },
+    update: { name: 'Reading', displayOrder: 1 },
+    create: { code: 'READING', name: 'Reading', displayOrder: 1 },
+  })
+
+  const level = await prisma.assessmentLevel.upsert({
+    where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'RW' } },
     update: { name: 'Reads Words', order: 4 },
-    create: { code: 'RW', name: 'Reads Words', order: 4 },
+    create: { assessmentTypeId: readingType.id, code: 'RW', name: 'Reads Words', order: 4 },
   })
 
   await prisma.school.create({
@@ -76,12 +82,13 @@ async function seedFixtures() {
     },
   })
 
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-parent-report-history',
       studentId: STUDENT_ID,
       enrollmentId: ENROLLMENT_ID,
-      readingLevelId: level.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: level.id,
       userId: teacher.id,
       recordedAt: new Date('2026-05-03T12:00:00.000Z'),
       notes: 'E2E report note',
@@ -104,13 +111,14 @@ test.describe('parent report sharing', () => {
     await page.goto(`/dashboard/students/${STUDENT_ID}`)
 
     await expect(page.getByRole('heading', { name: 'E2E Parent Report Student' })).toBeVisible()
+    await page.getByRole('button', { name: /Adicionar contato|Add contact/i }).click()
     await page.getByPlaceholder(/Nome do contato|Contact name/).fill('Maria Parent')
     await page.getByText(/Parentesco|Relationship/).click()
     await page.getByRole('option', { name: /Mãe|Mother/ }).click()
     const detailWhatsappInput = page.getByPlaceholder('(85) 99999-0000')
     await detailWhatsappInput.fill('85999990000')
     await expect(detailWhatsappInput).toHaveValue('(85) 99999-0000')
-    await page.getByRole('button', { name: /Adicionar contato|Add contact/ }).click()
+    await page.getByRole('button', { name: /Salvar|Save/ }).click()
     await expect(page.locator('p').filter({ hasText: 'Maria Parent' })).toBeVisible()
 
     await page.getByRole('button', { name: /Gerar link do relatório|Generate report link/ }).click()
@@ -127,7 +135,7 @@ test.describe('parent report sharing', () => {
     const reportPath = new URL(reportLink || '').pathname
     await page.goto(reportPath)
     await expect(page.getByRole('heading', { name: 'E2E Parent Report Student' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /Gráfico de Progresso|Progress Chart/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Gráfico de Progresso|Progress Chart/ }).first()).toBeVisible()
     await expect(page.getByText('E2E report note', { exact: true }).last()).toBeVisible()
   })
 

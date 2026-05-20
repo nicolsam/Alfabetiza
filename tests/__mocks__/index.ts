@@ -22,14 +22,20 @@ export const mockStudent = {
   create: vi.fn(),
 }
 
-export const mockReadingLevel = {
+export const mockAssessmentLevel = {
   findMany: vi.fn(),
   findUnique: vi.fn(),
+  findFirst: vi.fn(),
 }
 
-export const mockStudentReadingHistory = {
+export const mockStudentAssessment = {
   create: vi.fn(),
   findMany: vi.fn(),
+  findFirst: vi.fn(),
+  findUnique: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  count: vi.fn(),
 }
 
 export const mockPrisma = {
@@ -37,8 +43,8 @@ export const mockPrisma = {
   school: mockSchool,
   userSchool: mockUserSchool,
   student: mockStudent,
-  readingLevel: mockReadingLevel,
-  studentReadingHistory: mockStudentReadingHistory,
+  assessmentLevel: mockAssessmentLevel,
+  studentAssessment: mockStudentAssessment,
 }
 
 // Reset all mocks
@@ -52,8 +58,8 @@ export function resetMocks() {
     mockSchool,
     mockUserSchool,
     mockStudent,
-    mockReadingLevel,
-    mockStudentReadingHistory,
+    mockAssessmentLevel,
+    mockStudentAssessment,
   ]
 
   mocks.forEach(model => {

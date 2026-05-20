@@ -59,7 +59,7 @@ function currentMonthDates() {
 }
 
 async function cleanupMetricFixtures() {
-  await prisma.studentReadingHistory.deleteMany({ where: { studentId: { in: STUDENT_IDS } } })
+  await prisma.studentAssessment.deleteMany({ where: { studentId: { in: STUDENT_IDS } } })
   await prisma.studentEnrollment.deleteMany({ where: { studentId: { in: STUDENT_IDS } } })
   await prisma.student.deleteMany({ where: { id: { in: STUDENT_IDS } } })
   await prisma.class.deleteMany({ where: { id: CLASS_ID } })
@@ -72,26 +72,31 @@ async function seedMetricFixtures() {
   if (!teacher) throw new Error(`Missing E2E teacher: ${TEACHER_EMAIL}`)
 
   const { academicYear, current, previous } = currentMonthDates()
+  const readingType = await prisma.assessmentType.upsert({
+    where: { code: 'READING' },
+    update: { name: 'Reading', displayOrder: 1 },
+    create: { code: 'READING', name: 'Reading', displayOrder: 1 },
+  })
   const levels = await Promise.all([
-    prisma.readingLevel.upsert({
-      where: { code: 'SO' },
-      update: { name: 'Syllables Only', order: 3 },
-      create: { code: 'SO', name: 'Syllables Only', order: 3 },
+    prisma.assessmentLevel.upsert({
+      where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'SO' } },
+      update: { name: 'Syllables Only', order: 3, isAttention: true },
+      create: { assessmentTypeId: readingType.id, code: 'SO', name: 'Syllables Only', order: 3, isAttention: true },
     }),
-    prisma.readingLevel.upsert({
-      where: { code: 'RW' },
+    prisma.assessmentLevel.upsert({
+      where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'RW' } },
       update: { name: 'Reads Words', order: 4 },
-      create: { code: 'RW', name: 'Reads Words', order: 4 },
+      create: { assessmentTypeId: readingType.id, code: 'RW', name: 'Reads Words', order: 4 },
     }),
-    prisma.readingLevel.upsert({
-      where: { code: 'RS' },
+    prisma.assessmentLevel.upsert({
+      where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'RS' } },
       update: { name: 'Reads Sentences', order: 5 },
-      create: { code: 'RS', name: 'Reads Sentences', order: 5 },
+      create: { assessmentTypeId: readingType.id, code: 'RS', name: 'Reads Sentences', order: 5 },
     }),
-    prisma.readingLevel.upsert({
-      where: { code: 'RTF' },
+    prisma.assessmentLevel.upsert({
+      where: { assessmentTypeId_code: { assessmentTypeId: readingType.id, code: 'RTF' } },
       update: { name: 'Reads Text Fluently', order: 7 },
-      create: { code: 'RTF', name: 'Reads Text Fluently', order: 7 },
+      create: { assessmentTypeId: readingType.id, code: 'RTF', name: 'Reads Text Fluently', order: 7 },
     }),
   ])
   const levelByCode = Object.fromEntries(levels.map((level) => [level.code, level]))
@@ -137,52 +142,57 @@ async function seedMetricFixtures() {
     })
   }
 
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-metrics-attention-history',
       studentId: STUDENTS.attention.id,
       enrollmentId: `${STUDENTS.attention.id}-enrollment`,
-      readingLevelId: levelByCode.SO.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: levelByCode.SO.id,
       userId: teacher.id,
       recordedAt: current,
     },
   })
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-metrics-missing-history',
       studentId: STUDENTS.missing.id,
       enrollmentId: `${STUDENTS.missing.id}-enrollment`,
-      readingLevelId: levelByCode.RS.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: levelByCode.RS.id,
       userId: teacher.id,
       recordedAt: previous,
     },
   })
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-metrics-improved-previous-history',
       studentId: STUDENTS.improved.id,
       enrollmentId: `${STUDENTS.improved.id}-enrollment`,
-      readingLevelId: levelByCode.RW.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: levelByCode.RW.id,
       userId: teacher.id,
       recordedAt: previous,
     },
   })
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-metrics-improved-current-history',
       studentId: STUDENTS.improved.id,
       enrollmentId: `${STUDENTS.improved.id}-enrollment`,
-      readingLevelId: levelByCode.RS.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: levelByCode.RS.id,
       userId: teacher.id,
       recordedAt: current,
     },
   })
-  await prisma.studentReadingHistory.create({
+  await prisma.studentAssessment.create({
     data: {
       id: 'e2e-metrics-control-history',
       studentId: STUDENTS.control.id,
       enrollmentId: `${STUDENTS.control.id}-enrollment`,
-      readingLevelId: levelByCode.RTF.id,
+      assessmentTypeId: readingType.id,
+      assessmentLevelId: levelByCode.RTF.id,
       userId: teacher.id,
       recordedAt: current,
     },

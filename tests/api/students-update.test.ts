@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Use vi.hoisted to define mocks at the right time
-const { mockCreateHistory, mockFindStudent, mockFindUser, mockFindUserSchool, mockVerifyToken } = vi.hoisted(() => ({
+const { mockCreateHistory, mockFindReadingLevel, mockFindStudent, mockFindUser, mockFindUserSchool, mockVerifyToken } = vi.hoisted(() => ({
   mockCreateHistory: vi.fn(),
+  mockFindReadingLevel: vi.fn(),
   mockFindStudent: vi.fn(),
   mockFindUser: vi.fn(),
   mockFindUserSchool: vi.fn(),
@@ -11,12 +12,12 @@ const { mockCreateHistory, mockFindStudent, mockFindUser, mockFindUserSchool, mo
 
 vi.mock('@/lib/db', () => ({
   prisma: {
-    studentReadingHistory: { create: mockCreateHistory },
+    studentAssessment: { create: mockCreateHistory },
     user: { findUnique: mockFindUser },
     school: { findMany: vi.fn() },
     userSchool: { findMany: vi.fn(), findUnique: mockFindUserSchool },
     student: { findMany: vi.fn(), findUnique: mockFindStudent },
-    readingLevel: { findMany: vi.fn() },
+    assessmentLevel: { findMany: vi.fn(), findFirst: mockFindReadingLevel },
   },
 }))
 
@@ -53,6 +54,11 @@ describe('API: /api/students/update PATCH', () => {
         deletedAt: null,
         class: { academicYear: 2026 },
       }],
+    })
+    mockFindReadingLevel.mockResolvedValue({
+      id: 'level-123',
+      assessmentTypeId: 'assessment-type-reading',
+      assessmentType: { id: 'assessment-type-reading', code: 'READING' },
     })
   })
 
@@ -139,9 +145,10 @@ describe('API: /api/students/update PATCH', () => {
     mockCreateHistory.mockResolvedValue({ 
       id: 'history-1', 
       studentId: 'student-123', 
-      readingLevelId: 'level-123',
+      assessmentLevelId: 'level-123',
       userId: 'teacher-123',
-      notes: 'Good progress'
+      notes: 'Good progress',
+      assessmentLevel: { id: 'level-123', code: 'RW', order: 4 },
     })
 
     const request = new Request('http://localhost/api/students/update', {
@@ -168,10 +175,36 @@ describe('API: /api/students/update PATCH', () => {
       data: expect.objectContaining({
         studentId: 'student-123',
         enrollmentId: 'enrollment-2026',
-        readingLevelId: 'level-123',
+        assessmentTypeId: 'assessment-type-reading',
+        assessmentLevelId: 'level-123',
         recordedAt: new Date(2026, 3, 10),
       }),
+      include: { assessmentLevel: true },
     })
+  })
+
+  it('should reject levels outside the reading assessment type', async () => {
+    mockFindReadingLevel.mockResolvedValue(null)
+
+    const request = new Request('http://localhost/api/students/update', {
+      method: 'PATCH',
+      headers: {
+        authorization: 'Bearer valid-token',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        studentId: 'student-123',
+        readingLevelId: 'writing-level-123',
+        recordedAt: '2026-04-10',
+      }),
+    })
+
+    const response = await UpdateReadingLevel(request)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Invalid reading level')
+    expect(mockCreateHistory).not.toHaveBeenCalled()
   })
 
   it('should reject future assessment dates', async () => {

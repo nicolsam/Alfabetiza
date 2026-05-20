@@ -19,8 +19,9 @@ describe('generated Prisma client', () => {
       StudentContact: 'StudentContact',
       StudentCommentary: 'StudentCommentary',
       StudentEnrollment: 'StudentEnrollment',
-      ReadingLevel: 'ReadingLevel',
-      StudentReadingHistory: 'StudentReadingHistory',
+      AssessmentType: 'AssessmentType',
+      AssessmentLevel: 'AssessmentLevel',
+      StudentAssessment: 'StudentAssessment',
       StudentParentReportLink: 'StudentParentReportLink',
     })
   })
@@ -43,8 +44,9 @@ describe('generated Prisma client', () => {
       endedAt: 'endedAt',
     })
 
-    expect(Prisma.ReadingLevelScalarFieldEnum).toMatchObject({
+    expect(Prisma.AssessmentLevelScalarFieldEnum).toMatchObject({
       id: 'id',
+      assessmentTypeId: 'assessmentTypeId',
       name: 'name',
       code: 'code',
       order: 'order',
