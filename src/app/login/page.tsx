@@ -95,8 +95,10 @@ export default function LoginPage() {
       <main className="flex min-h-[560px] items-center justify-center px-6 py-10 sm:px-10 lg:px-16">
         <div className="w-full max-w-md space-y-6 2xl:max-w-lg 2xl:space-y-8">
           <div className="rounded-lg border border-slate-200 bg-white p-8 shadow-sm 2xl:p-10">
-            <div className="mb-8 space-y-2 text-center 2xl:mb-10">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 2xl:text-base">{t('login')}</h2>
+            <div className="mb-8 space-y-2 text-left 2xl:mb-10">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 2xl:text-base">{t('login')}</h3>
+              <h2 className="text-2xl font-bold leading-8 text-slate-800 2xl:text-3xl 2xl:leading-9">{t('accessYourAccount')}</h2>
+              <p className="text-lg leading-8 text-slate-600 2xl:text-xl 2xl:leading-9">{t('enterToContinueStudentsTracking')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5 2xl:space-y-6">

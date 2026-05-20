@@ -192,6 +192,8 @@
   },
   "auth": {
     "login": "Login",
+    "accessYourAccount": "Acesse sua conta",
+    "enterToContinueStudentsTracking": "Entre para continuar o acompanhamento dos alunos",
     "register": "Criar Conta",
     "introTitle": "Acompanhamento da alfabetização escolar",
     "description": "Acompanhe o nível de leitura dos alunos de forma simples e organizada.",

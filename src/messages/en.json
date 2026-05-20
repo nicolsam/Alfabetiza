@@ -198,6 +198,8 @@
   },
   "auth": {
     "login": "Login",
+    "accessYourAccount": "Access your account",
+    "enterToContinueStudentsTracking": "Enter to continue with students tracking",
     "register": "Create Account",
     "introTitle": "School literacy tracking",
     "description": "Track students' reading levels in a simple and organized way.",
