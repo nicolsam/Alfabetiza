@@ -59,6 +59,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         id: updatedUser.id,
         name: updatedUser.name,
         email: updatedUser.email,
+        gender: updatedUser.gender,
         isGlobalAdmin: updatedUser.isGlobalAdmin,
         schools: updatedUser.schools.map((school) => ({
           schoolId: school.schoolId,

@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import NavigationHint from '@/components/navigation/NavigationHint'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
-import { canManageSchools, canManageTeachers, getStoredUser, type StoredUser } from '@/lib/client-auth'
+import { canManageSchools, canManageTeachers, canViewCoordinators, getStoredUser, type StoredUser } from '@/lib/client-auth'
 
 interface School {
   id: string
@@ -165,6 +165,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className={`block px-4 py-2 hover:bg-gray-700 ${pathname === '/dashboard/teachers' ? 'bg-gray-700' : ''}`}
             >
               {t('teachers')}
+              <NavigationHint />
+            </Link>
+          )}
+          {canViewCoordinators(user) && (
+            <Link
+              href="/dashboard/coordinators"
+              className={`block px-4 py-2 hover:bg-gray-700 ${pathname === '/dashboard/coordinators' ? 'bg-gray-700' : ''}`}
+            >
+              {t('coordinators')}
               <NavigationHint />
             </Link>
           )}

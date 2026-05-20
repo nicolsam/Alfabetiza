@@ -17,6 +17,15 @@ function normalizeRole(role: unknown): string | null {
   return typeof role === 'string' && MANAGEABLE_ROLES.includes(role as (typeof MANAGEABLE_ROLES)[number]) ? role : null
 }
 
+function getRoleFilter(role: string | null): string[] | NextResponse {
+  if (!role) return [...MANAGEABLE_ROLES]
+
+  const normalizedRole = normalizeRole(role)
+  if (!normalizedRole) return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+
+  return [normalizedRole]
+}
+
 function hasCoordinatorAssignment(user: { schools: { role: string }[] }): boolean {
   return user.schools.some((school) => school.role === USER_SCHOOL_ROLES.COORDINATOR)
 }
@@ -25,6 +34,7 @@ function serializeUser(user: {
   id: string
   name: string
   email: string
+  gender?: string | null
   isGlobalAdmin: boolean
   schools: { schoolId: string; role: string; school: { id: string; name: string } }[]
 }) {
@@ -32,6 +42,7 @@ function serializeUser(user: {
     id: user.id,
     name: user.name,
     email: user.email,
+    gender: user.gender,
     isGlobalAdmin: user.isGlobalAdmin,
     schools: user.schools.map((school) => ({
       schoolId: school.schoolId,
@@ -48,9 +59,15 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const requestedSchoolId = searchParams.get('schoolId')
+    const requestedRole = searchParams.get('role')
+    const roleFilter = getRoleFilter(requestedRole)
+    if (!Array.isArray(roleFilter)) return roleFilter
+
     const coordinatorSchoolId = getCoordinatorSchoolId(auth.user)
     const schoolId = auth.user.isGlobalAdmin ? requestedSchoolId : coordinatorSchoolId
-    const manageableRoles = [...MANAGEABLE_ROLES]
+    const manageableRoles = auth.user.isGlobalAdmin
+      ? roleFilter
+      : requestedRole ? roleFilter : [USER_SCHOOL_ROLES.TEACHER]
 
     if (!auth.user.isGlobalAdmin && !schoolId) return forbiddenResponse()
 
@@ -60,7 +77,7 @@ export async function GET(request: Request) {
         schools: {
           some: {
             ...(schoolId ? { schoolId } : {}),
-            role: auth.user.isGlobalAdmin ? { in: manageableRoles } : USER_SCHOOL_ROLES.TEACHER,
+            role: { in: manageableRoles },
             school: { deletedAt: null },
           },
         },
@@ -69,7 +86,7 @@ export async function GET(request: Request) {
         schools: {
           where: {
             ...(schoolId ? { schoolId } : {}),
-            role: auth.user.isGlobalAdmin ? { in: manageableRoles } : USER_SCHOOL_ROLES.TEACHER,
+            role: { in: manageableRoles },
             school: { deletedAt: null },
           },
           include: { school: { select: { id: true, name: true } } },
@@ -82,7 +99,7 @@ export async function GET(request: Request) {
       where: {
         acceptedAt: null,
         ...(schoolId ? { schoolId } : {}),
-        role: auth.user.isGlobalAdmin ? { in: manageableRoles } : USER_SCHOOL_ROLES.TEACHER,
+        role: { in: manageableRoles },
         school: { deletedAt: null },
       },
       include: { school: { select: { id: true, name: true } } },

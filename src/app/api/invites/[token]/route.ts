@@ -114,6 +114,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ t
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    if (!user.isGlobalAdmin && invite.role === USER_SCHOOL_ROLES.COORDINATOR) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     if (invite.acceptedAt) {
       return NextResponse.json({ error: 'Invite already accepted' }, { status: 400 })
     }

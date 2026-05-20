@@ -22,6 +22,7 @@
     "dashboard": "Painel",
     "students": "Alunos",
     "teachers": "Professores",
+    "coordinators": "Coordenadores",
     "schools": "Escolas",
     "classes": "Turmas",
     "logout": "Sair",
@@ -205,6 +206,7 @@
   "teachers": {
     "title": "Professores",
     "description": "Convide e gerencie professores da sua escola.",
+    "inviteUser": "Convidar professor",
     "inviteTeacher": "Convidar professor",
     "inviteDescription": "Crie um link de convite para o professor definir a própria senha.",
     "openInviteModal": "Convidar professor",
@@ -230,8 +232,11 @@
     "inviteAlreadyExists": "Já existe um convite pendente para este e-mail.",
     "emailExists": "E-mail já existe",
     "forbidden": "Você não tem permissão para fazer isso.",
+    "activeUsers": "Professores ativos",
     "activeTeachers": "Professores ativos",
+    "editUser": "Editar professor",
     "editTeacher": "Editar professor",
+    "editUserDescription": "Atualize o nome e o e-mail de login do professor.",
     "editTeacherDescription": "Atualize o nome e o e-mail de login do professor.",
     "updated": "Professor atualizado",
     "updateError": "Falha ao atualizar professor",
@@ -245,6 +250,81 @@
     "roles": {
       "TEACHER": "Professor",
       "COORDINATOR": "Coordenador Pedagógico"
+    },
+    "rolesMale": {
+      "TEACHER": "Professor",
+      "COORDINATOR": "Coordenador Pedagógico"
+    },
+    "rolesFemale": {
+      "TEACHER": "Professora",
+      "COORDINATOR": "Coordenadora Pedagógica"
+    },
+    "validation": {
+      "schoolRequired": "Selecione uma escola antes de criar o convite do professor.",
+      "nameRequired": "Informe o nome completo do professor.",
+      "emailRequired": "Informe o e-mail do professor.",
+      "emailInvalid": "Informe um e-mail válido para o professor, como professor@escola.com."
+    },
+    "inviteDeleted": "Convite excluído",
+    "inviteDeleteError": "Falha ao excluir convite"
+  },
+  "coordinators": {
+    "title": "Coordenadores",
+    "description": "Visualize os coordenadores da sua escola. Administradores podem convidar e gerenciar coordenadores.",
+    "inviteUser": "Convidar coordenador",
+    "inviteDescription": "Crie um link de convite para o coordenador definir a própria senha.",
+    "openInviteModal": "Convidar coordenador",
+    "inviteModalTitle": "Dados do coordenador",
+    "inviteModalDescription": "Escolha a escola, informe os dados do coordenador e crie o convite.",
+    "inviteLinkTitle": "Link de convite pronto",
+    "inviteLinkDescription": "Compartilhe este link com a pessoa convidada. Ele só pode ser usado uma vez e expira em 7 dias.",
+    "inviteAnother": "Convidar outro",
+    "close": "Fechar",
+    "school": "Escola",
+    "selectSchool": "Selecionar escola",
+    "name": "Nome",
+    "email": "E-mail",
+    "role": "Perfil",
+    "createInvite": "Criar convite",
+    "copyInvite": "Copiar link do convite",
+    "inviteLinkUnavailable": "Este convite foi criado antes dos links persistentes. Crie um novo convite para compartilhar um link.",
+    "inviteCreated": "Convite criado",
+    "inviteError": "Falha ao criar convite",
+    "userAssigned": "Usuário adicionado à escola",
+    "alreadyAssigned": "Este usuário já está vinculado a esta escola.",
+    "coordinatorAlreadyAssigned": "Este coordenador já está vinculado a uma escola.",
+    "inviteAlreadyExists": "Já existe um convite pendente para este e-mail.",
+    "emailExists": "E-mail já existe",
+    "forbidden": "Você não tem permissão para fazer isso.",
+    "activeUsers": "Coordenadores ativos",
+    "editUser": "Editar coordenador",
+    "editUserDescription": "Atualize o nome e o e-mail de login do coordenador.",
+    "updated": "Coordenador atualizado",
+    "updateError": "Falha ao atualizar coordenador",
+    "pendingInvites": "Convites pendentes",
+    "noPendingInvites": "Nenhum convite pendente.",
+    "empty": "Nenhum coordenador encontrado.",
+    "unassign": "Remover da escola",
+    "unassigned": "Coordenador removido",
+    "unassignError": "Falha ao remover coordenador",
+    "copied": "Link do convite copiado",
+    "roles": {
+      "TEACHER": "Professor",
+      "COORDINATOR": "Coordenador Pedagógico"
+    },
+    "rolesMale": {
+      "TEACHER": "Professor",
+      "COORDINATOR": "Coordenador Pedagógico"
+    },
+    "rolesFemale": {
+      "TEACHER": "Professora",
+      "COORDINATOR": "Coordenadora Pedagógica"
+    },
+    "validation": {
+      "schoolRequired": "Selecione uma escola antes de criar o convite do coordenador.",
+      "nameRequired": "Informe o nome completo do coordenador.",
+      "emailRequired": "Informe o e-mail do coordenador.",
+      "emailInvalid": "Informe um e-mail válido para o coordenador, como coordenador@escola.com."
     },
     "inviteDeleted": "Convite excluído",
     "inviteDeleteError": "Falha ao excluir convite"

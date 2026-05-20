@@ -1,22 +1,27 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 const {
+  mockVerifyToken,
   mockFindInvite,
   mockFindUser,
   mockCreateUser,
   mockUpdateInvite,
+  mockDeleteInvite,
   mockTransaction,
   mockHashPassword,
 } = vi.hoisted(() => ({
+  mockVerifyToken: vi.fn(),
   mockFindInvite: vi.fn(),
   mockFindUser: vi.fn(),
   mockCreateUser: vi.fn(),
   mockUpdateInvite: vi.fn(),
+  mockDeleteInvite: vi.fn(),
   mockTransaction: vi.fn(),
   mockHashPassword: vi.fn(),
 }))
 
 vi.mock('@/lib/auth', () => ({
+  verifyToken: mockVerifyToken,
   hashPassword: mockHashPassword,
 }))
 
@@ -24,6 +29,7 @@ vi.mock('@/lib/db', () => ({
   prisma: {
     userInvite: {
       findUnique: mockFindInvite,
+      delete: mockDeleteInvite,
     },
     user: {
       findUnique: mockFindUser,
@@ -32,13 +38,20 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
-import { POST } from '@/app/api/invites/[token]/route'
+import { DELETE, POST } from '@/app/api/invites/[token]/route'
 
 function createRequest(body: unknown) {
   return new Request('https://aleno.test/api/invites/invite-token', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
+  })
+}
+
+function createDeleteRequest() {
+  return new Request('https://aleno.test/api/invites/invite-1', {
+    method: 'DELETE',
+    headers: { authorization: 'Bearer valid-token' },
   })
 }
 
@@ -98,5 +111,45 @@ describe('API: /api/invites/[token] POST', () => {
         gender: 'FEMALE',
       }),
     })
+  })
+})
+
+describe('API: /api/invites/[token] DELETE', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockVerifyToken.mockReturnValue({ id: 'coordinator-1', email: 'coordinator@test.com' })
+    mockFindUser.mockResolvedValue({
+      id: 'coordinator-1',
+      email: 'coordinator@test.com',
+      name: 'Coordinator',
+      isGlobalAdmin: false,
+      schools: [{ schoolId: 'school-1', role: 'COORDINATOR' }],
+    })
+    mockDeleteInvite.mockResolvedValue({})
+  })
+
+  it('prevents coordinators from deleting coordinator invites', async () => {
+    mockFindInvite.mockResolvedValue({ ...createInvite(), role: 'COORDINATOR' })
+
+    const response = await DELETE(createDeleteRequest(), {
+      params: Promise.resolve({ token: 'invite-1' }),
+    })
+    const data = await response.json()
+
+    expect(response.status).toBe(403)
+    expect(data.error).toBe('Forbidden')
+    expect(mockDeleteInvite).not.toHaveBeenCalled()
+  })
+
+  it('allows coordinators to delete same-school teacher invites', async () => {
+    mockFindInvite.mockResolvedValue(createInvite())
+
+    const response = await DELETE(createDeleteRequest(), {
+      params: Promise.resolve({ token: 'invite-1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mockDeleteInvite).toHaveBeenCalledWith({ where: { id: 'invite-1' } })
   })
 })

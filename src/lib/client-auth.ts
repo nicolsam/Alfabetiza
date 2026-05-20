@@ -39,3 +39,7 @@ export function canManageSchoolScopedRecords(user: StoredUser | null): boolean {
 export function canManageTeachers(user: StoredUser | null): boolean {
   return canManageSchoolScopedRecords(user)
 }
+
+export function canViewCoordinators(user: StoredUser | null): boolean {
+  return canManageSchoolScopedRecords(user)
+}

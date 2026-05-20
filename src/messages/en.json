@@ -22,6 +22,7 @@
     "dashboard": "Dashboard",
     "students": "Students",
     "teachers": "Teachers",
+    "coordinators": "Coordinators",
     "schools": "Schools",
     "classes": "Classes",
     "logout": "Logout",
@@ -37,6 +38,12 @@
     "rolesFemale": {
       "TEACHER": "Teacher",
       "COORDINATOR": "Academic Coordinator"
+    },
+    "validation": {
+      "schoolRequired": "Choose a school before creating the teacher invite.",
+      "nameRequired": "Enter the teacher's full name.",
+      "emailRequired": "Enter the teacher's email address.",
+      "emailInvalid": "Enter a valid teacher email address, such as teacher@school.com."
     }
   },
   "students": {
@@ -205,6 +212,7 @@
   "teachers": {
     "title": "Teachers",
     "description": "Invite and manage teachers for your school.",
+    "inviteUser": "Invite teacher",
     "inviteTeacher": "Invite teacher",
     "inviteDescription": "Create an invite link so the teacher can set their own password.",
     "openInviteModal": "Invite teacher",
@@ -230,8 +238,11 @@
     "inviteAlreadyExists": "A pending invite already exists for this email.",
     "emailExists": "Email already exists",
     "forbidden": "You do not have permission to do this.",
+    "activeUsers": "Active teachers",
     "activeTeachers": "Active teachers",
+    "editUser": "Edit teacher",
     "editTeacher": "Edit teacher",
+    "editUserDescription": "Update the teacher name and login email.",
     "editTeacherDescription": "Update the teacher name and login email.",
     "updated": "Teacher updated",
     "updateError": "Failed to update teacher",
@@ -243,6 +254,75 @@
     "unassignError": "Failed to unassign teacher",
     "copied": "Invite link copied",
     "roles": {
+      "TEACHER": "Teacher",
+      "COORDINATOR": "Academic Coordinator"
+    },
+    "rolesMale": {
+      "TEACHER": "Teacher",
+      "COORDINATOR": "Academic Coordinator"
+    },
+    "rolesFemale": {
+      "TEACHER": "Teacher",
+      "COORDINATOR": "Academic Coordinator"
+    },
+    "validation": {
+      "schoolRequired": "Choose a school before creating the coordinator invite.",
+      "nameRequired": "Enter the coordinator's full name.",
+      "emailRequired": "Enter the coordinator's email address.",
+      "emailInvalid": "Enter a valid coordinator email address, such as coordinator@school.com."
+    }
+  },
+  "coordinators": {
+    "title": "Coordinators",
+    "description": "View coordinators for your school. Administrators can invite and manage coordinators.",
+    "inviteUser": "Invite coordinator",
+    "inviteDescription": "Create an invite link so the coordinator can set their own password.",
+    "openInviteModal": "Invite coordinator",
+    "inviteModalTitle": "Coordinator details",
+    "inviteModalDescription": "Choose the school, enter the coordinator information, and create the invite.",
+    "inviteLinkTitle": "Invitation link ready",
+    "inviteLinkDescription": "Share this link with the invited user. It can be used once and expires in 7 days.",
+    "inviteAnother": "Invite another",
+    "close": "Close",
+    "school": "School",
+    "selectSchool": "Select a school",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "createInvite": "Create Invite",
+    "copyInvite": "Copy invite link",
+    "inviteLinkUnavailable": "This invite was created before persistent links were added. Create a new invite to share a link.",
+    "inviteCreated": "Invite created",
+    "inviteError": "Failed to create invite",
+    "userAssigned": "User added to school",
+    "alreadyAssigned": "This user is already assigned to this school.",
+    "coordinatorAlreadyAssigned": "This coordinator is already assigned to a school.",
+    "inviteAlreadyExists": "A pending invite already exists for this email.",
+    "emailExists": "Email already exists",
+    "forbidden": "You do not have permission to do this.",
+    "activeUsers": "Active coordinators",
+    "editUser": "Edit coordinator",
+    "editUserDescription": "Update the coordinator name and login email.",
+    "updated": "Coordinator updated",
+    "updateError": "Failed to update coordinator",
+    "pendingInvites": "Pending invites",
+    "noPendingInvites": "No pending invites.",
+    "empty": "No coordinators found.",
+    "unassign": "Unassign from school",
+    "unassigned": "Coordinator unassigned",
+    "unassignError": "Failed to unassign coordinator",
+    "copied": "Invite link copied",
+    "inviteDeleted": "Invite deleted",
+    "inviteDeleteError": "Failed to delete invite",
+    "roles": {
+      "TEACHER": "Teacher",
+      "COORDINATOR": "Academic Coordinator"
+    },
+    "rolesMale": {
+      "TEACHER": "Teacher",
+      "COORDINATOR": "Academic Coordinator"
+    },
+    "rolesFemale": {
       "TEACHER": "Teacher",
       "COORDINATOR": "Academic Coordinator"
     }

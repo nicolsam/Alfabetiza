@@ -121,6 +121,135 @@ describe('API: /api/users', () => {
     expect(data.invites[0].inviteLink).toBe('https://aleno.test/invite/invite-token')
   })
 
+  it('filters admin user lists to teachers when role=TEACHER', async () => {
+    mockGlobalAdminAuth()
+    mockFindUsers.mockResolvedValue([
+      {
+        id: 'teacher-1',
+        name: 'Teacher',
+        email: 'teacher@test.com',
+        isGlobalAdmin: false,
+        schools: [{
+          schoolId: 'school-1',
+          role: 'TEACHER',
+          school: { id: 'school-1', name: 'School 1' },
+        }],
+      },
+    ])
+    mockFindInvites.mockResolvedValue([])
+
+    const response = await GET(createRequest('/api/users?role=TEACHER'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.users).toHaveLength(1)
+    expect(data.users[0].schools[0].role).toBe('TEACHER')
+    expect(mockFindUsers).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        schools: expect.objectContaining({
+          some: expect.objectContaining({ role: { in: ['TEACHER'] } }),
+        }),
+      }),
+    }))
+  })
+
+  it('filters admin user lists to coordinators when role=COORDINATOR', async () => {
+    mockGlobalAdminAuth()
+    mockFindUsers.mockResolvedValue([
+      {
+        id: 'coordinator-2',
+        name: 'Coordinator',
+        email: 'coordinator2@test.com',
+        gender: 'FEMALE',
+        isGlobalAdmin: false,
+        schools: [{
+          schoolId: 'school-1',
+          role: 'COORDINATOR',
+          school: { id: 'school-1', name: 'School 1' },
+        }],
+      },
+    ])
+    mockFindInvites.mockResolvedValue([])
+
+    const response = await GET(createRequest('/api/users?role=COORDINATOR'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.users).toHaveLength(1)
+    expect(data.users[0].gender).toBe('FEMALE')
+    expect(data.users[0].schools[0].role).toBe('COORDINATOR')
+    expect(mockFindUsers).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        schools: expect.objectContaining({
+          some: expect.objectContaining({ role: { in: ['COORDINATOR'] } }),
+        }),
+      }),
+    }))
+  })
+
+  it('rejects invalid role filters', async () => {
+    mockGlobalAdminAuth()
+
+    const response = await GET(createRequest('/api/users?role=ADMIN'))
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('Invalid role')
+    expect(mockFindUsers).not.toHaveBeenCalled()
+    expect(mockFindInvites).not.toHaveBeenCalled()
+  })
+
+  it('lets coordinators list same-school coordinators with role=COORDINATOR', async () => {
+    mockCoordinatorAuth()
+    mockFindUsers.mockResolvedValue([
+      {
+        id: 'coordinator-1',
+        name: 'Coordinator',
+        email: 'coordinator@test.com',
+        isGlobalAdmin: false,
+        schools: [{
+          schoolId: 'school-1',
+          role: 'COORDINATOR',
+          school: { id: 'school-1', name: 'School 1' },
+        }],
+      },
+    ])
+    mockFindInvites.mockResolvedValue([])
+
+    const response = await GET(createRequest('/api/users?role=COORDINATOR'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.users[0].email).toBe('coordinator@test.com')
+    expect(mockFindUsers).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        schools: expect.objectContaining({
+          some: expect.objectContaining({
+            schoolId: 'school-1',
+            role: { in: ['COORDINATOR'] },
+          }),
+        }),
+      }),
+    }))
+  })
+
+  it('ignores requested school when coordinators list coordinators', async () => {
+    mockCoordinatorAuth()
+    mockFindUsers.mockResolvedValue([])
+    mockFindInvites.mockResolvedValue([])
+
+    const response = await GET(createRequest('/api/users?role=COORDINATOR&schoolId=school-2'))
+
+    expect(response.status).toBe(200)
+    expect(mockFindUsers).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        schools: expect.objectContaining({
+          some: expect.objectContaining({ schoolId: 'school-1' }),
+        }),
+      }),
+    }))
+  })
+
   it('stores the invite token so pending invitations can show their links later', async () => {
     mockCoordinatorAuth()
     mockFindSchool.mockResolvedValue({ id: 'school-1', name: 'School 1' })
