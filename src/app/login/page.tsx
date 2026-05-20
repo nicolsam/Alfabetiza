@@ -66,14 +66,14 @@ export default function LoginPage() {
       <section className="flex items-center border-b border-slate-200 bg-white px-6 py-10 sm:px-10 lg:border-b-0 lg:border-r lg:px-16">
         <div className="mx-auto w-full max-w-xl space-y-8">
           <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 2xl:text-base">
               Alfabetiza
             </p>
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold text-slate-950 sm:text-4xl">
+              <h1 className="text-4xl font-bold text-slate-950 2xl:text-5xl">
                 {t('introTitle')}
               </h1>
-              <p className="text-base leading-7 text-slate-600 sm:text-lg">
+              <p className="text-lg leading-8 text-slate-600 2xl:text-xl 2xl:leading-9">
                 {t('description')}
               </p>
             </div>
@@ -85,7 +85,7 @@ export default function LoginPage() {
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-blue-100 text-blue-700">
                   <Icon className="size-4" aria-hidden="true" />
                 </span>
-                <p className="text-sm font-medium leading-6 text-slate-700">{label}</p>
+                <p className="text-sm font-medium leading-6 text-slate-700 2xl:text-base 2xl:leading-7">{label}</p>
               </div>
             ))}
           </div>
@@ -96,8 +96,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6 2xl:max-w-lg 2xl:space-y-8">
           <div className="rounded-lg border border-slate-200 bg-white p-8 shadow-sm 2xl:p-10">
             <div className="mb-8 space-y-2 text-center 2xl:mb-10">
-              <h2 className="text-2xl font-bold text-slate-950 2xl:text-3xl">Alfabetiza</h2>
-              <p className="text-sm text-slate-600 2xl:text-base">{t('login')}</p>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 2xl:text-base">{t('login')}</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5 2xl:space-y-6">
