@@ -3,7 +3,7 @@ import { login } from './utils';
 
 test.describe('i18n Localization', () => {
   test('should translate sidebar navigation when switching language to Portuguese', async ({ page }) => {
-    await login(page, 'test-regular@example.com');
+    await login(page, 'test-admin@example.com');
 
     // Click the PT language switcher button
     const ptButton = page.locator('button', { hasText: /^PT$/ });
@@ -15,7 +15,7 @@ test.describe('i18n Localization', () => {
   });
 
   test('should translate sidebar navigation when switching language to English', async ({ page }) => {
-    await login(page, 'test-regular@example.com');
+    await login(page, 'test-admin@example.com');
 
     // Click the EN language switcher button
     const enButton = page.locator('button', { hasText: /^EN$/ });
