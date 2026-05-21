@@ -370,8 +370,10 @@
     "menuTitle": "Guided tours",
     "menuDescription": "Pick a workflow to review.",
     "completed": "Done",
-    "missingTarget": "This tour needs existing data on the page before it can start.",
-    "progressText": "{{current}} of {{total}}",
+    "unavailable": "This tour is not available on the current screen yet.",
+    "sampleHint": "Starts with sample data when the page is empty.",
+    "sampleBadge": "Example",
+    "demoNoSave": "This is sample tour data, so nothing was saved.",
     "buttons": {
       "next": "Next",
       "previous": "Back",
@@ -391,15 +393,15 @@
         },
         "improved": {
           "title": "Students who improved",
-          "description": "Open this list to review students who moved forward in their reading level."
+          "description": "This card is clickable. Select it to open the list of students who moved forward in their reading level this month."
         },
         "attention": {
           "title": "Students needing attention",
-          "description": "This card points to students whose current reading level needs closer follow-up."
+          "description": "This card is clickable. Select it to open the students whose current reading level needs closer follow-up."
         },
         "missingUpdates": {
           "title": "Missing monthly updates",
-          "description": "Use this list to complete assessments that are still pending for the selected month."
+          "description": "This card is clickable. Select it to open the students with assessments still pending for the selected month."
         },
         "distribution": {
           "title": "Reading distribution",
@@ -541,7 +543,7 @@
         },
         "missingCard": {
           "title": "Open pending updates",
-          "description": "This card takes you to the students missing an assessment for the selected month."
+          "description": "Click this card to open the students missing an assessment for the selected month."
         },
         "actionFilters": {
           "title": "Filter the action list",
@@ -557,11 +559,11 @@
         },
         "attentionCard": {
           "title": "Review attention list",
-          "description": "After pending updates, review students who need closer attention."
+          "description": "Click this card to open and review students who need closer attention."
         },
         "improvedCard": {
           "title": "Celebrate improvement",
-          "description": "Finish by checking students who improved during the selected period."
+          "description": "Click this card to open the list of students who improved during the selected period."
         }
       }
     }

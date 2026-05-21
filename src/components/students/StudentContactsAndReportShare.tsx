@@ -17,6 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  TOUR_DEMO_CONTACTS,
+  TOUR_DEMO_REPORT,
+} from '@/lib/product-tour-demo-data'
 
 type StudentContact = {
   id: string
@@ -43,6 +47,7 @@ type Props = {
   studentId: string
   studentName: string
   schoolName: string
+  demoMode?: boolean
 }
 
 const emptyContactForm: ContactForm = {
@@ -52,9 +57,10 @@ const emptyContactForm: ContactForm = {
   isPrimary: false,
 }
 
-export default function StudentContactsAndReportShare({ studentId }: Props) {
+export default function StudentContactsAndReportShare({ studentId, demoMode = false }: Props) {
   const t = useTranslations('students')
   const tCommon = useTranslations('common')
+  const tTours = useTranslations('tours')
   const [contacts, setContacts] = useState<StudentContact[]>([])
   const [contactForm, setContactForm] = useState<ContactForm>(emptyContactForm)
   const [selectedContactId, setSelectedContactId] = useState('')
@@ -66,6 +72,15 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
 
   useEffect(() => {
+    if (demoMode) {
+      queueMicrotask(() => {
+        setContacts(TOUR_DEMO_CONTACTS)
+        setSelectedContactId(TOUR_DEMO_CONTACTS[0]?.id || '')
+        setLoadingContacts(false)
+      })
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -83,7 +98,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
     }
 
     fetchContacts()
-  }, [studentId])
+  }, [studentId, demoMode])
 
   const selectedContact = contacts.find((contact) => contact.id === selectedContactId) || null
   const getRelationshipLabel = (relationship: string | null) => (
@@ -92,6 +107,12 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
 
   const saveContact = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (demoMode) {
+      setShowContactModal(false)
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -146,6 +167,11 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
   }
 
   const deleteContact = async (contactId: string) => {
+    if (demoMode) {
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -166,6 +192,12 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
   }
 
   const generateReport = async () => {
+    if (demoMode) {
+      setReport(TOUR_DEMO_REPORT)
+      toast.info(tTours('demoNoSave'))
+      return TOUR_DEMO_REPORT
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return null
 

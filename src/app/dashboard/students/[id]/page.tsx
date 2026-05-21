@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import { ArrowLeft, TrendingUp, User, BookOpen, Trash2, BarChart2, Edit2, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { getReadingLevelStyle } from '@/lib/reading-levels'
 import { getDefaultAssessmentDateForMonth, getMonthKey } from '@/lib/monthly-updates'
 import { buildReadingLevelAxisLabels, buildStudentProgressChartData } from '@/lib/student-progress-chart'
@@ -14,6 +15,13 @@ import StudentProfileSkeleton from '@/components/skeletons/StudentProfileSkeleto
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
 import StudentContactsAndReportShare from '@/components/students/StudentContactsAndReportShare'
 import RichTextEditor from '@/components/ui/RichTextEditor'
+import { useTourDemoMode } from '@/components/tours/useTourDemoMode'
+import {
+  TOUR_DEMO_COMMENTARIES,
+  TOUR_DEMO_READING_LEVELS,
+  TOUR_DEMO_STUDENT,
+  TOUR_DEMO_STUDENT_ID,
+} from '@/lib/product-tour-demo-data'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,7 +92,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   const tCommon = useTranslations('common')
   const tLevels = useTranslations('levels')
   const tErrors = useTranslations('errors')
+  const tTours = useTranslations('tours')
   const locale = useLocale()
+  const activeDemoTour = useTourDemoMode()
 
   const [studentId, setStudentId] = useState<string>('')
   const [student, setStudent] = useState<StudentDetail | null>(null)
@@ -119,6 +129,23 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (!studentId) return
+    if (studentId === TOUR_DEMO_STUDENT_ID) {
+      const combined: TimelineItem[] = [
+        ...TOUR_DEMO_STUDENT.readingHistory.map((historyEntry) => ({ ...historyEntry, type: 'history' as const })),
+        ...TOUR_DEMO_COMMENTARIES.map((commentary) => ({ ...commentary, type: 'commentary' as const })),
+      ].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+
+      queueMicrotask(() => {
+        setStudent(TOUR_DEMO_STUDENT)
+        setHistory(TOUR_DEMO_STUDENT.readingHistory)
+        setTimeline(combined)
+        setLevels(TOUR_DEMO_READING_LEVELS)
+        setCurrentUser({ id: 'tour-demo-teacher', role: 'TEACHER', isGlobalAdmin: false })
+        setLoading(false)
+      })
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) {
       router.push('/login')
@@ -157,7 +184,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       setLoading(false)
     }
     fetchData()
-  }, [studentId, router])
+  }, [studentId, router, activeDemoTour])
 
   const refreshData = async () => {
     const token = localStorage.getItem('token')
@@ -179,6 +206,12 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
   const handleUpdateLevel = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (studentId === TOUR_DEMO_STUDENT_ID) {
+      setShowUpdateModal(false)
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token || !updateLevel.readingLevelId) return
 
@@ -201,6 +234,12 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
   const handlePostInlineComment = async () => {
     if (!inlineComment.trim() || inlineComment === '<p></p>') return
+    if (studentId === TOUR_DEMO_STUDENT_ID) {
+      setInlineComment('')
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -346,6 +385,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-800">{student.name}</h1>
+              {student.id === TOUR_DEMO_STUDENT_ID && (
+                <span className="mt-1 inline-flex rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                  {tTours('sampleBadge')}
+                </span>
+              )}
               <p className="text-gray-500 text-sm">#{student.studentNumber}</p>
               <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                 <span>{t('school')}: <strong>{student.school.name}</strong></span>
@@ -385,6 +429,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         studentId={student.id}
         studentName={student.name}
         schoolName={student.school.name}
+        demoMode={student.id === TOUR_DEMO_STUDENT_ID}
       />
 
       {chartData.length > 0 && (

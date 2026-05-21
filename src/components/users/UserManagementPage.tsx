@@ -482,7 +482,12 @@ export default function UserManagementPage({
                 </div>
 
                 <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end" data-tour={role === 'TEACHER' ? 'teacher-invite-actions' : undefined}>
-                  <Button type="button" variant="outline" onClick={closeInviteModal}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    data-tour={role === 'TEACHER' ? 'teacher-invite-cancel' : undefined}
+                    onClick={closeInviteModal}
+                  >
                     {tCommon('cancel')}
                   </Button>
                   <Button type="submit">{t('createInvite')}</Button>

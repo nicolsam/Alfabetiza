@@ -372,8 +372,10 @@
     "menuTitle": "Tours guiados",
     "menuDescription": "Escolha um fluxo para revisar.",
     "completed": "Feito",
-    "missingTarget": "Este tour precisa de dados existentes na página antes de começar.",
-    "progressText": "{{current}} de {{total}}",
+    "unavailable": "Este tour ainda não está disponível na tela atual.",
+    "sampleHint": "Começa com dados de exemplo quando a página está vazia.",
+    "sampleBadge": "Exemplo",
+    "demoNoSave": "Estes são dados de exemplo do tour, então nada foi salvo.",
     "buttons": {
       "next": "Próximo",
       "previous": "Voltar",
@@ -393,15 +395,15 @@
         },
         "improved": {
           "title": "Alunos que evoluíram",
-          "description": "Abra esta lista para revisar alunos que avançaram no nível de leitura."
+          "description": "Este card é clicável. Selecione para abrir a lista de alunos que avançaram no nível de leitura neste mês."
         },
         "attention": {
           "title": "Alunos que precisam de atenção",
-          "description": "Este card aponta alunos cujo nível atual pede acompanhamento mais próximo."
+          "description": "Este card é clicável. Selecione para abrir os alunos cujo nível atual pede acompanhamento mais próximo."
         },
         "missingUpdates": {
           "title": "Atualizações pendentes",
-          "description": "Use esta lista para concluir avaliações ainda pendentes no mês selecionado."
+          "description": "Este card é clicável. Selecione para abrir os alunos com avaliações ainda pendentes no mês selecionado."
         },
         "distribution": {
           "title": "Distribuição de leitura",
@@ -543,7 +545,7 @@
         },
         "missingCard": {
           "title": "Abra as pendências",
-          "description": "Este card leva aos alunos sem avaliação registrada no mês selecionado."
+          "description": "Clique neste card para abrir os alunos sem avaliação registrada no mês selecionado."
         },
         "actionFilters": {
           "title": "Filtre a lista de ação",
@@ -559,11 +561,11 @@
         },
         "attentionCard": {
           "title": "Revise a lista de atenção",
-          "description": "Depois das pendências, revise alunos que precisam de acompanhamento mais próximo."
+          "description": "Clique neste card para abrir e revisar alunos que precisam de acompanhamento mais próximo."
         },
         "improvedCard": {
           "title": "Celebre a evolução",
-          "description": "Finalize conferindo alunos que evoluíram no período selecionado."
+          "description": "Clique neste card para abrir a lista de alunos que evoluíram no período selecionado."
         }
       }
     }

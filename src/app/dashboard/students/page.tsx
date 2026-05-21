@@ -48,6 +48,12 @@ import { canManageSchoolScopedRecords, getStoredUser, type StoredUser } from '@/
 import StudentRegistrationModal, {
   type StudentRegistrationPayload,
 } from '@/components/students/StudentRegistrationModal'
+import { useTourDemoMode } from '@/components/tours/useTourDemoMode'
+import {
+  TOUR_DEMO_READING_LEVELS,
+  TOUR_DEMO_STUDENT,
+  TOUR_DEMO_STUDENT_ID,
+} from '@/lib/product-tour-demo-data'
 
 interface ClassRecord {
   id: string
@@ -101,6 +107,8 @@ export default function StudentsPage() {
   const tCommon = useTranslations('common')
   const tLevels = useTranslations('levels')
   const tErrors = useTranslations('errors')
+  const tTours = useTranslations('tours')
+  const activeDemoTour = useTourDemoMode()
 
   const [students, setStudents] = useState<Student[]>([])
   const [levels, setLevels] = useState<ReadingLevel[]>([])
@@ -364,6 +372,17 @@ export default function StudentsPage() {
 
   const handleUpdateLevel = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (updateLevel.studentId === TOUR_DEMO_STUDENT_ID) {
+      setUpdateLevel({
+        studentId: '',
+        readingLevelId: '',
+        notes: '',
+        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+      })
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -412,9 +431,15 @@ export default function StudentsPage() {
   const missingUpdatesHref = buildDashboardActionListHref('/dashboard/students/missing-updates', { month: selectedMonth, schoolId })
   const needAttentionHref = buildDashboardActionListHref('/dashboard/students/need-attention', { month: selectedMonth, schoolId })
   const improvedHref = buildDashboardActionListHref('/dashboard/students/improved', { month: selectedMonth, schoolId })
-  const studentMetrics = getStudentMetricCounts(students, selectedMonth)
   const canManageStudents = canManageSchoolScopedRecords(user)
-  const filteredStudents = filterBySearchQuery(students, searchQuery, (student) => [
+  const shouldShowDemoStudent = (
+    ['student-assessment', 'student-profile', 'parent-report-sharing'].includes(activeDemoTour || '') &&
+    students.length === 0
+  )
+  const visibleStudents = shouldShowDemoStudent ? [TOUR_DEMO_STUDENT] : students
+  const studentMetrics = getStudentMetricCounts(visibleStudents, selectedMonth)
+  const visibleLevels = levels.length > 0 ? levels : TOUR_DEMO_READING_LEVELS
+  const filteredStudents = filterBySearchQuery(visibleStudents, searchQuery, (student) => [
     student.name,
     student.studentNumber,
     formatClassName(student.class),
@@ -426,7 +451,7 @@ export default function StudentsPage() {
     return <StudentsSkeleton />
   }
 
-  if (schools.length === 0) {
+  if (schools.length === 0 && !shouldShowDemoStudent) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-700 mb-4">{t('needSchool')}</p>
@@ -626,7 +651,7 @@ export default function StudentsPage() {
             </tr>
           </thead>
           <tbody>
-            {students.length === 0 ? (
+            {visibleStudents.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-4 text-center text-gray-700">
                   {t('noStudents')}
@@ -648,6 +673,11 @@ export default function StudentsPage() {
                       data-tour="students-first-profile-link"
                     >
                       {student.name}
+                      {student.id === TOUR_DEMO_STUDENT_ID && (
+                        <span className="ml-2 rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {tTours('sampleBadge')}
+                        </span>
+                      )}
                     </Link>
                   </td>
                   <td className="p-4 text-gray-800">{student.studentNumber}</td>
@@ -730,10 +760,10 @@ export default function StudentsPage() {
       {/* Edit Modal */}
       {editingStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-xl" data-tour="assessment-modal">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('editStudent')}</h2>
             <form onSubmit={handleUpdateStudent} className="space-y-4">
-              <div className="space-y-1" data-tour="assessment-level-field">
+              <div className="space-y-1">
                 <Label>{tClasses('selectClass')}</Label>
                 <Select value={editingStudent.classId} onValueChange={(value) => setEditingStudent({ ...editingStudent, classId: value })}>
                   <SelectTrigger className="w-full">
@@ -778,17 +808,17 @@ export default function StudentsPage() {
       {/* Update Level Modal */}
       {updateLevel.studentId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-xl" data-tour="assessment-modal">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('updateLevel')}</h2>
             <form onSubmit={handleUpdateLevel} className="space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1" data-tour="assessment-level-field">
                 <Label>{tLevels('selectLevel')}</Label>
                 <Select value={updateLevel.readingLevelId} onValueChange={(value) => setUpdateLevel({ ...updateLevel, readingLevelId: value })}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={tLevels('selectLevel')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {levels.map((level) => (
+                    {visibleLevels.map((level) => (
                       <SelectItem key={level.id} value={level.id}>
                         {tLevels(level.code)}
                       </SelectItem>
@@ -818,7 +848,13 @@ export default function StudentsPage() {
                 <Button type="submit" className="flex-1">
                   {tCommon('save')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })} className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-tour="assessment-cancel"
+                  onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })}
+                  className="flex-1"
+                >
                   {tCommon('cancel')}
                 </Button>
               </div>
