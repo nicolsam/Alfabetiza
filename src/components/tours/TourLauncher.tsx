@@ -171,9 +171,6 @@ export default function TourLauncher({ user }: TourLauncherProps) {
                 <span>
                   <span className="block text-sm font-medium text-white">{t(`${tour.id}.title`)}</span>
                   <span className="mt-0.5 block text-xs leading-5 text-gray-400">{t(`${tour.id}.summary`)}</span>
-                  {tour.supportsDemoData && (
-                    <span className="mt-1 block text-xs font-medium text-blue-300">{t('sampleHint')}</span>
-                  )}
                 </span>
                 {isTourCompleted(tour.id, window.localStorage) && (
                   <span className="mt-0.5 rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
