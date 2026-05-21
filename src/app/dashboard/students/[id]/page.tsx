@@ -126,9 +126,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     }
     
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      setCurrentUser(payload)
-    } catch (e) {
+      const payload = JSON.parse(atob(token.split('.')[1])) as { id: string; role: string; isGlobalAdmin: boolean }
+      queueMicrotask(() => setCurrentUser(payload))
+    } catch {
       // ignore
     }
 
@@ -338,7 +338,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         {t('backToStudents')}
       </Link>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-6" data-tour="student-profile-summary">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -353,7 +353,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2" data-tour="student-current-level">
             {currentLevel ? (
               <span
                 className="px-3 py-1.5 rounded-full text-sm font-semibold"
@@ -388,7 +388,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       />
 
       {chartData.length > 0 && (
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+        <div className="mb-6 grid gap-6 lg:grid-cols-2" data-tour="student-progress-charts">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp size={20} className="text-blue-600" />
@@ -407,13 +407,13 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6" data-tour="student-reading-history">
         <div className="flex items-center gap-2 mb-6">
           <BookOpen size={20} className="text-blue-600" />
           <h2 className="text-lg font-semibold text-gray-800">{t('historyAndCommentaries') || 'Histórico e Comentários'}</h2>
         </div>
 
-        <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-100" data-tour="student-commentary-entry">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             {t('addCommentary') || 'Adicionar Comentário'}
           </label>

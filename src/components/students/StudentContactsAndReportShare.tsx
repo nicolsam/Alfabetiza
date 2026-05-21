@@ -203,7 +203,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
 
   return (
     <section className="mb-6 grid gap-6 lg:grid-cols-[6fr_4fr]">
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-white p-6 shadow" data-tour="student-parent-contacts">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Phone className="size-5 text-blue-600" />
@@ -334,7 +334,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-white p-6 shadow" data-tour="student-report-share">
         <div className="mb-4 flex items-center gap-2">
           <MessageCircle className="size-5 text-green-600" />
           <h2 className="text-lg font-semibold text-gray-800">{t('reportSharing')}</h2>
@@ -368,7 +368,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" data-tour="student-report-actions">
             <button
               type="button"
               onClick={generateReport}

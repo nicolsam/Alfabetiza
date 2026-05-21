@@ -340,7 +340,7 @@ export default function DashboardActionListPage({
         </div>
       </div>
 
-      <Card className="mb-6">
+      <Card className="mb-6" data-tour="action-list-filters">
         <CardContent className="p-4">
           <div className="grid gap-4 md:flex md:flex-wrap md:items-end">
             <div className="space-y-1 md:w-56">
@@ -393,7 +393,7 @@ export default function DashboardActionListPage({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour="action-list-table">
         <CardContent className="p-0">
           {students.length === 0 ? (
             <div className="p-8 text-center text-gray-700">{emptyMessage}</div>
@@ -446,6 +446,7 @@ export default function DashboardActionListPage({
                         <div className="flex items-center gap-4">
                           <Button
                             type="button"
+                            data-tour="action-list-update-level-button"
                             variant="link"
                             size="sm"
                             onClick={() => {

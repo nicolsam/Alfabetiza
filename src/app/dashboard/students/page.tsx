@@ -448,7 +448,7 @@ export default function StudentsPage() {
         )}
       </div>
 
-      <div className="mb-6 space-y-4 bg-white p-4 rounded-lg shadow">
+      <div className="mb-6 space-y-4 bg-white p-4 rounded-lg shadow" data-tour="students-filters">
         <div className="grid gap-4 md:flex md:flex-wrap md:items-end">
           <div className="space-y-1 md:min-w-64 md:flex-1">
             <Label>{tCommon('searchPlaceholder')}</Label>
@@ -559,7 +559,7 @@ export default function StudentsPage() {
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" data-tour="students-metrics">
         <Link href={needAttentionHref} data-testid="students-need-attention-card">
           <Card className="transition-shadow hover:shadow-md cursor-pointer h-full">
             <CardHeader className="pb-2">
@@ -642,7 +642,11 @@ export default function StudentsPage() {
               filteredStudents.map((student) => (
                 <tr key={student.id} className="border-t hover:bg-gray-50 group">
                   <td className="p-4">
-                    <Link href={`/dashboard/students/${student.id}`} className="text-blue-600 hover:underline font-medium">
+                    <Link
+                      href={`/dashboard/students/${student.id}`}
+                      className="text-blue-600 hover:underline font-medium"
+                      data-tour="students-first-profile-link"
+                    >
                       {student.name}
                     </Link>
                   </td>
@@ -670,6 +674,7 @@ export default function StudentsPage() {
                     <div className="flex items-center gap-4">
                       <Button
                         type="button"
+                        data-tour="students-update-level-button"
                         variant="link"
                         size="sm"
                         onClick={() => {
@@ -725,10 +730,10 @@ export default function StudentsPage() {
       {/* Edit Modal */}
       {editingStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-xl" data-tour="assessment-modal">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('editStudent')}</h2>
             <form onSubmit={handleUpdateStudent} className="space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1" data-tour="assessment-level-field">
                 <Label>{tClasses('selectClass')}</Label>
                 <Select value={editingStudent.classId} onValueChange={(value) => setEditingStudent({ ...editingStudent, classId: value })}>
                   <SelectTrigger className="w-full">
@@ -792,13 +797,14 @@ export default function StudentsPage() {
                 </Select>
               </div>
               <textarea
+                data-tour="assessment-notes-field"
                 placeholder={t('notes')}
                 value={updateLevel.notes}
                 onChange={(e) => setUpdateLevel({ ...updateLevel, notes: e.target.value })}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring"
                 rows={3}
               />
-              <div className="space-y-1">
+              <div className="space-y-1" data-tour="assessment-date-field">
                 <Label>{t('assessmentDate')}</Label>
                 <Input
                   type="date"
@@ -808,7 +814,7 @@ export default function StudentsPage() {
                   required
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2" data-tour="assessment-actions">
                 <Button type="submit" className="flex-1">
                   {tCommon('save')}
                 </Button>

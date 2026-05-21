@@ -375,7 +375,7 @@ export default function UserManagementPage({
       </div>
 
       {canManageUsers && (
-        <Card>
+        <Card data-tour={role === 'TEACHER' ? 'teachers-invite-card' : undefined}>
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>{t('inviteUser')}</CardTitle>
@@ -383,6 +383,7 @@ export default function UserManagementPage({
             </div>
             <Button
               type="button"
+              data-tour={role === 'TEACHER' ? 'teachers-open-invite' : undefined}
               data-testid={`${role.toLowerCase()}-invite-button`}
               onClick={openInviteModal}
               className="w-full sm:w-auto"
@@ -414,7 +415,7 @@ export default function UserManagementPage({
 
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl">
+          <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl" data-tour={role === 'TEACHER' ? 'teacher-invite-modal' : undefined}>
             {inviteStep === 'form' ? (
               <form onSubmit={handleInvite} className="space-y-4" noValidate>
                 <div>
@@ -422,7 +423,7 @@ export default function UserManagementPage({
                   <p className="text-sm text-gray-600">{t('inviteModalDescription')}</p>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1" data-tour={role === 'TEACHER' ? 'teacher-invite-school' : undefined}>
                   <Label>{t('school')}</Label>
                   <Select
                     value={schoolId}
@@ -447,9 +448,10 @@ export default function UserManagementPage({
                   )}
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1" data-tour={role === 'TEACHER' ? 'teacher-invite-name' : undefined}>
                   <Label>{t('name')}</Label>
                   <Input
+                    data-tour={role === 'TEACHER' ? 'teacher-invite-name-input' : undefined}
                     value={form.name}
                     onChange={(event) => {
                       setForm({ ...form, name: event.target.value })
@@ -462,9 +464,10 @@ export default function UserManagementPage({
                   )}
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1" data-tour={role === 'TEACHER' ? 'teacher-invite-email' : undefined}>
                   <Label>{t('email')}</Label>
                   <Input
+                    data-tour={role === 'TEACHER' ? 'teacher-invite-email-input' : undefined}
                     type="email"
                     value={form.email}
                     onChange={(event) => {
@@ -478,7 +481,7 @@ export default function UserManagementPage({
                   )}
                 </div>
 
-                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end" data-tour={role === 'TEACHER' ? 'teacher-invite-actions' : undefined}>
                   <Button type="button" variant="outline" onClick={closeInviteModal}>
                     {tCommon('cancel')}
                   </Button>
@@ -624,7 +627,7 @@ export default function UserManagementPage({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour={role === 'TEACHER' ? 'teachers-pending-invites' : undefined}>
         <CardHeader>
           <CardTitle>{t('pendingInvites')}</CardTitle>
         </CardHeader>

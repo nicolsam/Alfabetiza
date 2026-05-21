@@ -217,7 +217,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-800">{t('dashboard.title')}</h1>
       </div>
 
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
+      <div className="mb-6 bg-white p-4 rounded-lg shadow" data-tour="dashboard-filters">
         <div className="grid gap-4 md:flex md:flex-wrap md:items-end">
           <div className="space-y-1 md:min-w-56 md:flex-1">
             <Label className="text-gray-700">{t('classes.school')}</Label>
@@ -318,6 +318,7 @@ export default function DashboardPage() {
         <>
 
       {/* Current month: urgent warning banner */}
+      <div data-tour="dashboard-monthly-section">
       {isCurrent && stats.monthlyUpdates.missingCount > 0 && (
         <Alert variant="warning" className="mb-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -350,6 +351,7 @@ export default function DashboardPage() {
           </AlertDescription>
         </Alert>
       )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
@@ -362,7 +364,7 @@ export default function DashboardPage() {
             {stats.mostCommonLevel ? t(`levels.${stats.mostCommonLevel}`) : '-'}
           </p>
         </div>
-        <Link href={improvedHref} data-testid="dashboard-improved-card">
+        <Link href={improvedHref} data-testid="dashboard-improved-card" data-tour="dashboard-improved-card">
           <div className="bg-white p-6 rounded-lg shadow transition-shadow hover:shadow-md cursor-pointer h-full">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -375,7 +377,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
-        <Link href={needAttentionHref} data-testid="dashboard-need-attention-card">
+        <Link href={needAttentionHref} data-testid="dashboard-need-attention-card" data-tour="dashboard-need-attention-card">
           <div className="bg-white p-6 rounded-lg shadow transition-shadow hover:shadow-md cursor-pointer h-full">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -401,7 +403,7 @@ export default function DashboardPage() {
             <p className="text-3xl font-bold text-green-600">{stats.monthlyUpdates.updatedCount}</p>
           </CardContent>
         </Card>
-        <Link href={missingUpdatesHref} data-testid="dashboard-missing-updates-card">
+        <Link href={missingUpdatesHref} data-testid="dashboard-missing-updates-card" data-tour="dashboard-missing-updates-card">
           <Card className="transition-shadow hover:shadow-md cursor-pointer h-full">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between gap-3">
@@ -420,7 +422,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6" data-tour="dashboard-reading-distribution">
         <DashboardCharts
           distribution={chartDistribution}
           distributionTitle={t('dashboard.distribution')}
