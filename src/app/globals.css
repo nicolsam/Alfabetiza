@@ -184,6 +184,10 @@
   animation: guidedHelpAttentionGlow 1.7s ease-in-out infinite;
 }
 
+[data-app-modal="true"] {
+  margin: 0 !important;
+}
+
 @keyframes navigationHintFade {
   to {
     opacity: 0.75;

@@ -124,7 +124,7 @@ test.describe('Product tours', () => {
     await page.getByRole('button', { name: /Add Student/i }).click()
     await expect(page.locator('[data-tour="guided-help-menu"]')).toBeHidden()
     await expect(page.locator('[data-app-modal="true"]')).toBeVisible()
-    await expect(page.locator('[data-app-modal="true"]')).toHaveCSS('margin-top', '0px')
+    await expectAppModalHasNoSpacing(page)
     await expectSidebarCoveredByModal(page)
   })
 
@@ -225,4 +225,23 @@ async function expectSidebarCoveredByModal(page: import('@playwright/test').Page
   })
 
   expect(isSidebarCovered).toBe(true)
+}
+
+async function expectAppModalHasNoSpacing(page: import('@playwright/test').Page) {
+  const spacing = await page.locator('[data-app-modal="true"]').evaluate((element) => {
+    const style = window.getComputedStyle(element)
+    return {
+      marginBlockEnd: style.marginBlockEnd,
+      marginBlockStart: style.marginBlockStart,
+      marginBottom: style.marginBottom,
+      marginTop: style.marginTop,
+    }
+  })
+
+  expect(spacing).toEqual({
+    marginBlockEnd: '0px',
+    marginBlockStart: '0px',
+    marginBottom: '0px',
+    marginTop: '0px',
+  })
 }
