@@ -1,8 +1,9 @@
 'use client'
 
-import { createElement, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
+import { createElement, forwardRef, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { createPortal } from 'react-dom'
 import { driver, type Driver } from 'driver.js'
 import {
   ArrowLeft,
@@ -32,15 +33,18 @@ import {
   getTourStartAnchorNames,
   getTourStartReadiness,
   getGuidedHelpToursForCategory,
+  getTourUpdateState,
   isTourAutoStarted,
   isTourCompleted,
   markTourAutoStarted,
   markTourCompleted,
+  markTourVersionSeen,
   type ProductTourCategory,
   type ProductTourCategorySummary,
   type ProductTourId,
   type ProductTour,
   type ProductTourSection,
+  type ProductTourUpdateState,
   type TourStep,
 } from '@/lib/product-tours'
 import { activateTourDemo, deactivateTourDemo } from '@/lib/product-tour-demo-data'
@@ -72,6 +76,26 @@ type TourActionContext = {
   clearOpenedModal: () => void
 }
 
+type GuidedHelpMenuPosition = {
+  bottom: number
+  left: number
+}
+
+type GuidedHelpMenuProps = {
+  position: GuidedHelpMenuPosition
+  selectedCategory: ProductTourCategory | null
+  selectedCategoryTours: ProductTour[]
+  helpCategories: ProductTourCategorySummary[]
+  categoryUpdateCounts: Map<ProductTourCategory, number>
+  suggestedTour: ProductTour | null
+  getUpdateState: (tour: ProductTour) => ProductTourUpdateState
+  isCompleted: (tourId: ProductTourId) => boolean
+  onBack: () => void
+  onSelectCategory: (category: ProductTourCategory) => void
+  onStart: (tour: ProductTour) => Promise<void>
+  t: TourTranslator
+}
+
 const ROUTE_READY_TIMEOUT_MS = 6000
 const OPTIONAL_STEP_TIMEOUT_MS = 250
 const AUTO_START_DELAY_MS = 900
@@ -99,7 +123,10 @@ export default function TourLauncher({ user }: TourLauncherProps) {
   const [selectedCategory, setSelectedCategory] = useState<ProductTourCategory | null>(null)
   const [showAttentionCue, setShowAttentionCue] = useState(false)
   const [systemModalOpen, setSystemModalOpen] = useState(false)
+  const [guideUpdateRevision, setGuideUpdateRevision] = useState(0)
+  const [menuPosition, setMenuPosition] = useState<GuidedHelpMenuPosition | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
   const activeDriverRef = useRef<Driver | null>(null)
   const didCompleteTourRef = useRef(false)
   const openedModalCloseAnchorRef = useRef<string | null>(null)
@@ -112,6 +139,23 @@ export default function TourLauncher({ user }: TourLauncherProps) {
   const selectedCategoryTours = useMemo(() => (
     selectedCategory ? getGuidedHelpToursForCategory(availableTours, selectedCategory) : []
   ), [availableTours, selectedCategory])
+  const guideUpdateCount = useMemo(() => {
+    void guideUpdateRevision
+    if (typeof window === 'undefined') return 0
+    return availableTours.filter((tour) => getTourUpdateState(tour, window.localStorage)).length
+  }, [availableTours, guideUpdateRevision])
+  const categoryUpdateCounts = useMemo(() => {
+    void guideUpdateRevision
+    const counts = new Map<ProductTourCategory, number>()
+    if (typeof window === 'undefined') return counts
+
+    for (const tour of availableTours) {
+      if (!getTourUpdateState(tour, window.localStorage)) continue
+      counts.set(tour.category, (counts.get(tour.category) || 0) + 1)
+    }
+
+    return counts
+  }, [availableTours, guideUpdateRevision])
 
   const dismissAttentionCue = useCallback(() => {
     window.localStorage.setItem(GUIDED_HELP_ATTENTION_STORAGE_KEY, 'true')
@@ -122,6 +166,25 @@ export default function TourLauncher({ user }: TourLauncherProps) {
     setOpen(false)
     setSelectedCategory(null)
   }, [])
+
+  const updateMenuPosition = useCallback(() => {
+    const rect = rootRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    setMenuPosition({
+      bottom: window.innerHeight - rect.top + 8,
+      left: rect.left,
+    })
+  }, [])
+
+  const refreshGuideUpdateState = useCallback(() => {
+    setGuideUpdateRevision((current) => current + 1)
+  }, [])
+
+  const getGuideUpdateState = useCallback((tour: ProductTour) => {
+    void guideUpdateRevision
+    return typeof window === 'undefined' ? null : getTourUpdateState(tour, window.localStorage)
+  }, [guideUpdateRevision])
 
   const startTour = useCallback(async (tour: ProductTour, options: { autoStart?: boolean; pathname?: string } = {}) => {
     if (activeDriverRef.current?.isActive()) return
@@ -134,6 +197,9 @@ export default function TourLauncher({ user }: TourLauncherProps) {
       toast.info(t('unavailable'))
       return
     }
+
+    markTourVersionSeen(tour, window.localStorage)
+    refreshGuideUpdateState()
 
     const steps = buildTourSteps(tour.id, t, router.push)
     didCompleteTourRef.current = false
@@ -178,7 +244,7 @@ export default function TourLauncher({ user }: TourLauncherProps) {
     activeDriverRef.current = driverObj
     if (options.autoStart) markTourAutoStarted(tour.id, window.localStorage)
     driverObj.drive()
-  }, [closeMenu, locale, pathname, router.push, t])
+  }, [closeMenu, locale, pathname, refreshGuideUpdateState, router.push, t])
 
   useEffect(() => {
     if (!user || activeDriverRef.current?.isActive()) return
@@ -201,12 +267,26 @@ export default function TourLauncher({ user }: TourLauncherProps) {
       const target = event.target
       if (!(target instanceof Node)) return
       if (rootRef.current?.contains(target)) return
+      if (menuRef.current?.contains(target)) return
       closeMenu()
     }
 
     document.addEventListener('pointerdown', handlePointerDown, true)
     return () => document.removeEventListener('pointerdown', handlePointerDown, true)
   }, [closeMenu, open])
+
+  useEffect(() => {
+    if (!open) return
+
+    updateMenuPosition()
+    window.addEventListener('resize', updateMenuPosition)
+    window.addEventListener('scroll', updateMenuPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition)
+      window.removeEventListener('scroll', updateMenuPosition, true)
+    }
+  }, [open, updateMenuPosition])
 
   useEffect(() => {
     const updateModalState = () => {
@@ -254,6 +334,7 @@ export default function TourLauncher({ user }: TourLauncherProps) {
             closeMenu()
             return
           }
+          updateMenuPosition()
           setOpen((current) => {
             setSelectedCategory(null)
             return !current
@@ -262,57 +343,108 @@ export default function TourLauncher({ user }: TourLauncherProps) {
         onFocus={dismissAttentionCue}
       >
         <HelpCircle className="size-4" />
-        {t('launcher')}
+          {t('launcher')}
+        {guideUpdateCount > 0 && (
+          <span className="ml-auto rounded-full bg-blue-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+            {guideUpdateCount}
+          </span>
+        )}
       </Button>
 
-      {open && (
-        <div
-          className="absolute bottom-full left-0 z-[80] mb-2 w-80 overflow-hidden rounded-md border border-gray-700 bg-gray-950 shadow-xl"
-          data-tour="guided-help-menu"
-        >
-          <div className="border-b border-gray-800 px-3 py-3">
-            <p className="text-sm font-semibold text-white">{t('menuTitle')}</p>
-            <p className="text-xs text-gray-400">{t('menuDescription')}</p>
-          </div>
-          <div className="guided-help-scroll max-h-[28rem] overflow-y-auto py-2 pr-1">
-            {selectedCategory ? (
-              <GuidedHelpCategoryView
-                category={selectedCategory}
-                tours={selectedCategoryTours}
-                suggestedTourId={suggestedTour?.id || null}
-                isCompleted={(tourId) => isTourCompleted(tourId, window.localStorage)}
-                onBack={() => setSelectedCategory(null)}
-                onStart={startTour}
-                t={t}
-              />
-            ) : (
-              <GuidedHelpLandingView
-                categories={helpCategories}
-                suggestedTour={suggestedTour}
-                isCompleted={(tourId) => isTourCompleted(tourId, window.localStorage)}
-                onSelectCategory={setSelectedCategory}
-                onStart={startTour}
-                t={t}
-              />
-            )}
-          </div>
-        </div>
+      {open && menuPosition && createPortal(
+        <GuidedHelpMenu
+          ref={menuRef}
+          position={menuPosition}
+          selectedCategory={selectedCategory}
+          selectedCategoryTours={selectedCategoryTours}
+          helpCategories={helpCategories}
+          categoryUpdateCounts={categoryUpdateCounts}
+          suggestedTour={suggestedTour}
+          getUpdateState={getGuideUpdateState}
+          isCompleted={(tourId) => isTourCompleted(tourId, window.localStorage)}
+          onBack={() => setSelectedCategory(null)}
+          onSelectCategory={setSelectedCategory}
+          onStart={startTour}
+          t={t}
+        />,
+        document.body,
       )}
     </div>
   )
 }
 
+const GuidedHelpMenu = forwardRef<HTMLDivElement, GuidedHelpMenuProps>(function GuidedHelpMenu(
+  {
+    position,
+    selectedCategory,
+    selectedCategoryTours,
+    helpCategories,
+    categoryUpdateCounts,
+    suggestedTour,
+    getUpdateState,
+    isCompleted,
+    onBack,
+    onSelectCategory,
+    onStart,
+    t,
+  },
+  ref,
+) {
+  return (
+    <div
+      ref={ref}
+      className="fixed z-[80] w-80 overflow-hidden rounded-md border border-gray-700 bg-gray-950 shadow-xl"
+      data-tour="guided-help-menu"
+      style={{ bottom: position.bottom, left: position.left }}
+    >
+      <div className="border-b border-gray-800 px-3 py-3">
+        <p className="text-sm font-semibold text-white">{t('menuTitle')}</p>
+        <p className="text-xs text-gray-400">{t('menuDescription')}</p>
+      </div>
+      <div className="guided-help-scroll max-h-[28rem] overflow-y-auto py-2 pr-1">
+        {selectedCategory ? (
+          <GuidedHelpCategoryView
+            category={selectedCategory}
+            tours={selectedCategoryTours}
+            suggestedTourId={suggestedTour?.id || null}
+            isCompleted={isCompleted}
+            getUpdateState={getUpdateState}
+            onBack={onBack}
+            onStart={onStart}
+            t={t}
+          />
+        ) : (
+          <GuidedHelpLandingView
+            categories={helpCategories}
+            categoryUpdateCounts={categoryUpdateCounts}
+            suggestedTour={suggestedTour}
+            isCompleted={isCompleted}
+            getUpdateState={getUpdateState}
+            onSelectCategory={onSelectCategory}
+            onStart={onStart}
+            t={t}
+          />
+        )}
+      </div>
+    </div>
+  )
+})
+
 function GuidedHelpLandingView({
   categories,
+  categoryUpdateCounts,
   suggestedTour,
   isCompleted,
+  getUpdateState,
   onSelectCategory,
   onStart,
   t,
 }: {
   categories: ProductTourCategorySummary[]
+  categoryUpdateCounts: Map<ProductTourCategory, number>
   suggestedTour: ProductTour | null
   isCompleted: (tourId: ProductTourId) => boolean
+  getUpdateState: (tour: ProductTour) => ProductTourUpdateState
   onSelectCategory: (category: ProductTourCategory) => void
   onStart: (tour: ProductTour) => Promise<void>
   t: TourTranslator
@@ -324,6 +456,7 @@ function GuidedHelpLandingView({
           section={{ id: 'suggested-now', tours: [suggestedTour] }}
           isSuggestedSection
           isCompleted={isCompleted}
+          getUpdateState={getUpdateState}
           onStart={onStart}
           t={t}
         />
@@ -338,6 +471,7 @@ function GuidedHelpLandingView({
             <GuidedHelpCategoryCard
               key={category.id}
               category={category}
+              updateCount={categoryUpdateCounts.get(category.id) || 0}
               onSelectCategory={onSelectCategory}
               t={t}
             />
@@ -353,6 +487,7 @@ function GuidedHelpCategoryView({
   tours,
   suggestedTourId,
   isCompleted,
+  getUpdateState,
   onBack,
   onStart,
   t,
@@ -361,6 +496,7 @@ function GuidedHelpCategoryView({
   tours: ProductTour[]
   suggestedTourId: ProductTourId | null
   isCompleted: (tourId: ProductTourId) => boolean
+  getUpdateState: (tour: ProductTour) => ProductTourUpdateState
   onBack: () => void
   onStart: (tour: ProductTour) => Promise<void>
   t: TourTranslator
@@ -389,6 +525,7 @@ function GuidedHelpCategoryView({
             tour={tour}
             isSuggested={tour.id === suggestedTourId}
             isCompleted={isCompleted(tour.id)}
+            updateState={getUpdateState(tour)}
             onStart={onStart}
             t={t}
           />
@@ -400,10 +537,12 @@ function GuidedHelpCategoryView({
 
 function GuidedHelpCategoryCard({
   category,
+  updateCount,
   onSelectCategory,
   t,
 }: {
   category: ProductTourCategorySummary
+  updateCount: number
   onSelectCategory: (category: ProductTourCategory) => void
   t: TourTranslator
 }) {
@@ -426,6 +565,9 @@ function GuidedHelpCategoryCard({
         <span className="mt-2 inline-flex rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-medium text-gray-200">
           {guideCountLabel}
         </span>
+        {updateCount > 0 && (
+          <GuideBadge tone="new">{updateCount}</GuideBadge>
+        )}
       </span>
       <ChevronRight className="mt-2 size-4 shrink-0 text-gray-500" />
     </button>
@@ -436,12 +578,14 @@ function GuidedHelpSection({
   section,
   isSuggestedSection,
   isCompleted,
+  getUpdateState,
   onStart,
   t,
 }: {
   section: ProductTourSection
   isSuggestedSection: boolean
   isCompleted: (tourId: ProductTourId) => boolean
+  getUpdateState: (tour: ProductTour) => ProductTourUpdateState
   onStart: (tour: ProductTour) => Promise<void>
   t: TourTranslator
 }) {
@@ -458,6 +602,7 @@ function GuidedHelpSection({
             tour={tour}
             isSuggested={isSuggestedSection}
             isCompleted={isCompleted(tour.id)}
+            updateState={getUpdateState(tour)}
             onStart={onStart}
             t={t}
           />
@@ -471,12 +616,14 @@ function GuidedHelpItem({
   tour,
   isSuggested,
   isCompleted,
+  updateState,
   onStart,
   t,
 }: {
   tour: ProductTour
   isSuggested: boolean
   isCompleted: boolean
+  updateState: ProductTourUpdateState
   onStart: (tour: ProductTour) => Promise<void>
   t: TourTranslator
 }) {
@@ -493,6 +640,8 @@ function GuidedHelpItem({
         <span className="block text-sm font-medium text-white">{t(`${tour.id}.title`)}</span>
         <span className="mt-0.5 block text-xs leading-5 text-gray-400">{t(`${tour.id}.summary`)}</span>
         <span className="mt-2 flex flex-wrap gap-1.5">
+          {updateState === 'new' && <GuideBadge tone="new">{t('badges.new')}</GuideBadge>}
+          {updateState === 'updated' && <GuideBadge tone="updated">{t('badges.updated')}</GuideBadge>}
           {isSuggested && <GuideBadge>{t('badges.suggested')}</GuideBadge>}
           {isCompleted && <GuideBadge>{t('badges.completed')}</GuideBadge>}
           {tour.supportsDemoData && <GuideBadge>{t('badges.exampleData')}</GuideBadge>}
@@ -502,9 +651,15 @@ function GuidedHelpItem({
   )
 }
 
-function GuideBadge({ children }: { children: string }) {
+function GuideBadge({ children, tone = 'default' }: { children: string | number; tone?: 'default' | 'new' | 'updated' }) {
+  const toneClassName = {
+    default: 'bg-gray-800 text-gray-200',
+    new: 'bg-blue-500 text-white',
+    updated: 'bg-amber-400 text-gray-950',
+  }[tone]
+
   return (
-    <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] font-medium text-gray-200">
+    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${toneClassName}`}>
       {children}
     </span>
   )

@@ -41,6 +41,7 @@ test.describe('Product tours', () => {
     await page.goto('/dashboard')
 
     await page.getByRole('button', { name: /Guided help/i }).click()
+    await expect(page.locator('[data-tour="tour-launcher"]').getByText('6')).toBeVisible()
     await expect(page.getByText('What would you like to learn?')).toBeVisible()
     await expectGuidedHelpMenuAboveMain(page)
     await expect(page.getByText('Suggested now')).toBeVisible()
@@ -50,6 +51,7 @@ test.describe('Product tours', () => {
     await expect(page.getByRole('button', { name: /Sharing and team/ })).toBeVisible()
     await expect(page.getByText('Dashboard overview')).toBeVisible()
     await expect(page.getByText('Invite Teachers')).toBeHidden()
+    await expect(page.getByText('New').first()).toBeVisible()
     await expect(page.getByText('Uses example data when empty').first()).toBeVisible()
 
     await page.getByText('Dashboard overview').click()
@@ -61,6 +63,7 @@ test.describe('Product tours', () => {
     await expect(page.locator('.driver-popover')).toBeHidden()
 
     await page.getByRole('button', { name: /Guided help/i }).click()
+    await expect(page.locator('[data-tour="tour-launcher"]').getByText('5')).toBeVisible()
     await page.getByRole('button', { name: /Sharing and team/ }).click()
     await expect(page.getByRole('button', { name: /Back/ })).toBeVisible()
     await expect(page.getByText('Parent report sharing')).toBeVisible()
@@ -121,9 +124,7 @@ test.describe('Product tours', () => {
     await page.getByRole('button', { name: /Add Student/i }).click()
     await expect(page.locator('[data-tour="guided-help-menu"]')).toBeHidden()
     await expect(page.locator('[data-app-modal="true"]')).toBeVisible()
-
-    await page.getByRole('button', { name: /Guided help/i }).click()
-    await expect(page.locator('[data-tour="guided-help-menu"]')).toBeHidden()
+    await expectSidebarCoveredByModal(page)
   })
 
   test('starts the student assessment tour with sample data on an empty students page', async ({ page }) => {
@@ -212,4 +213,15 @@ async function expectGuidedHelpMenuAboveMain(page: import('@playwright/test').Pa
   })
 
   expect(isMenuOnTop).toBe(true)
+}
+
+async function expectSidebarCoveredByModal(page: import('@playwright/test').Page) {
+  const isSidebarCovered = await page.locator('aside').evaluate((element) => {
+    const rect = element.getBoundingClientRect()
+    const pointX = rect.left + rect.width / 2
+    const pointY = rect.top + rect.height / 2
+    return !element.contains(document.elementFromPoint(pointX, pointY))
+  })
+
+  expect(isSidebarCovered).toBe(true)
 }

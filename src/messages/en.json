@@ -387,6 +387,8 @@
       "other": "guides"
     },
     "badges": {
+      "new": "New",
+      "updated": "Updated",
       "suggested": "Suggested",
       "completed": "Completed",
       "exampleData": "Uses example data when empty"

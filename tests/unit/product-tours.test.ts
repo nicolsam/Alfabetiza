@@ -14,15 +14,21 @@ import {
   getGuidedHelpToursForCategory,
   getSuggestedTourForPath,
   getTourAutoStartedStorageKey,
+  getTourSeenVersion,
+  getTourSeenVersionStorageKey,
   getTourStartReadiness,
   getTourStorageKey,
+  getTourUpdateState,
   isTourAutoStarted,
   isTourCompleted,
   isTourDemoActive,
   isVisibleTourElement,
   markTourAutoStarted,
   markTourCompleted,
+  markTourVersionSeen,
   setActiveTourDemo,
+  TOUR_SEEN_VERSION_STORAGE_PREFIX,
+  type ProductTour,
   type ProductTourId,
   type TourStorage,
   type TourStep,
@@ -122,6 +128,48 @@ describe('product tours', () => {
 
     expect(isTourAutoStarted(tourId, storage)).toBe(true)
     expect(isTourCompleted(tourId, storage)).toBe(false)
+  })
+
+  it('tracks new and updated guide versions in client storage', () => {
+    const storage = new FakeTourStorage()
+    const tour = {
+      id: 'dashboard-overview',
+      version: 2,
+      route: '/dashboard',
+      requiredAnchor: 'dashboard-filters',
+      category: 'start-here',
+      order: 10,
+      requires: 'authenticated',
+    } satisfies ProductTour
+
+    expect(TOUR_SEEN_VERSION_STORAGE_PREFIX).toBe('alfabetiza:tours:seen-version')
+    expect(getTourSeenVersionStorageKey(tour.id)).toBe('alfabetiza:tours:seen-version:dashboard-overview')
+    expect(getTourSeenVersion(tour.id, storage)).toBeNull()
+    expect(getTourUpdateState(tour, storage)).toBe('new')
+
+    markTourVersionSeen(tour, storage)
+
+    expect(getTourSeenVersion(tour.id, storage)).toBe(2)
+    expect(getTourUpdateState(tour, storage)).toBeNull()
+
+    expect(getTourUpdateState({ ...tour, version: 3 }, storage)).toBe('updated')
+  })
+
+  it('does not mark already completed legacy guides as new without a seen version', () => {
+    const storage = new FakeTourStorage()
+    const tour = {
+      id: 'monthly-follow-up',
+      version: 1,
+      route: '/dashboard',
+      requiredAnchor: 'dashboard-missing-updates-card',
+      category: 'daily-workflows',
+      order: 20,
+      requires: 'authenticated',
+    } satisfies ProductTour
+
+    markTourCompleted(tour.id, storage)
+
+    expect(getTourUpdateState(tour, storage)).toBeNull()
   })
 
   it('stores active demo tours separately from completion state', () => {
@@ -245,6 +293,7 @@ describe('product tours', () => {
     expect(getTourStartReadiness(
       {
         id: 'student-assessment',
+        version: 1,
         route: '/dashboard/students',
         requiredAnchor: 'students-update-level-button',
         supportsDemoData: true,
@@ -258,6 +307,7 @@ describe('product tours', () => {
     expect(getTourStartReadiness(
       {
         id: 'invite-teachers',
+        version: 1,
         route: '/dashboard/teachers',
         requiredAnchor: 'teachers-invite-card',
         category: 'sharing-and-team',
@@ -270,6 +320,7 @@ describe('product tours', () => {
     expect(getTourStartReadiness(
       {
         id: 'dashboard-overview',
+        version: 1,
         route: '/dashboard',
         requiredAnchor: 'dashboard-filters',
         startAnchors: ['dashboard-filters', 'dashboard-reading-distribution'],

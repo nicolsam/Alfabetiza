@@ -215,7 +215,7 @@ export default function SchoolsPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" data-app-modal="true">
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96">
             <h2 className="text-xl font-bold mb-4">{t('add')}</h2>
             <form onSubmit={handleCreateSchool} className="space-y-4">

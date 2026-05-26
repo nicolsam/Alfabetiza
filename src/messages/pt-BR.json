@@ -389,6 +389,8 @@
       "other": "guias"
     },
     "badges": {
+      "new": "Novo",
+      "updated": "Atualizado",
       "suggested": "Sugerido",
       "completed": "Concluído",
       "exampleData": "Usa dados de exemplo se estiver vazio"

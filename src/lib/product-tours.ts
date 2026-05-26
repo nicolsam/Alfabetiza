@@ -7,6 +7,7 @@ import {
 
 export const TOUR_COMPLETED_STORAGE_PREFIX = 'alfabetiza:tours:completed'
 export const TOUR_AUTO_STARTED_STORAGE_PREFIX = 'alfabetiza:tours:auto-started'
+export const TOUR_SEEN_VERSION_STORAGE_PREFIX = 'alfabetiza:tours:seen-version'
 export const TOUR_DEMO_STORAGE_KEY = 'alfabetiza:tours:demo-active'
 export const TOUR_DEMO_MODE_EVENT = 'alfabetiza:tour-demo-mode-change'
 export const TOUR_DEMO_STUDENT_ID = 'tour-demo-student'
@@ -25,6 +26,7 @@ export type ProductTourId = (typeof PRODUCT_TOUR_IDS)[number]
 
 export type ProductTour = {
   id: ProductTourId
+  version: number
   route: string
   requiredAnchor: string
   startAnchors?: string[]
@@ -53,6 +55,7 @@ export type ProductTourCategorySummary = {
 
 export type TourStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 export type TourStartReadiness = 'ready' | 'demoAvailable' | 'unavailable'
+export type ProductTourUpdateState = 'new' | 'updated' | null
 export type TourTargetElement = {
   checkVisibility?: () => boolean
   getBoundingClientRect: () => Pick<DOMRect, 'width' | 'height'>
@@ -66,6 +69,7 @@ export type TourStep = DriveStep & {
 export const PRODUCT_TOURS: ProductTour[] = [
   {
     id: 'dashboard-overview',
+    version: 1,
     route: '/dashboard',
     requiredAnchor: 'dashboard-filters',
     startAnchors: [
@@ -83,6 +87,7 @@ export const PRODUCT_TOURS: ProductTour[] = [
   },
   {
     id: 'student-assessment',
+    version: 1,
     route: '/dashboard/students',
     requiredAnchor: 'students-update-level-button',
     supportsDemoData: true,
@@ -92,6 +97,7 @@ export const PRODUCT_TOURS: ProductTour[] = [
   },
   {
     id: 'invite-teachers',
+    version: 1,
     route: '/dashboard/teachers',
     requiredAnchor: 'teachers-invite-card',
     category: 'sharing-and-team',
@@ -100,6 +106,7 @@ export const PRODUCT_TOURS: ProductTour[] = [
   },
   {
     id: 'parent-report-sharing',
+    version: 1,
     route: '/dashboard/students',
     requiredAnchor: 'students-first-profile-link',
     supportsDemoData: true,
@@ -109,6 +116,7 @@ export const PRODUCT_TOURS: ProductTour[] = [
   },
   {
     id: 'student-profile',
+    version: 1,
     route: '/dashboard/students',
     requiredAnchor: 'students-first-profile-link',
     supportsDemoData: true,
@@ -118,6 +126,7 @@ export const PRODUCT_TOURS: ProductTour[] = [
   },
   {
     id: 'monthly-follow-up',
+    version: 1,
     route: '/dashboard',
     requiredAnchor: 'dashboard-missing-updates-card',
     supportsDemoData: true,
@@ -133,6 +142,10 @@ export function getTourStorageKey(tourId: ProductTourId): string {
 
 export function getTourAutoStartedStorageKey(tourId: ProductTourId): string {
   return `${TOUR_AUTO_STARTED_STORAGE_PREFIX}:${tourId}`
+}
+
+export function getTourSeenVersionStorageKey(tourId: ProductTourId): string {
+  return `${TOUR_SEEN_VERSION_STORAGE_PREFIX}:${tourId}`
 }
 
 export function isTourCompleted(tourId: ProductTourId, storage?: TourStorage | null): boolean {
@@ -153,6 +166,25 @@ export function isTourAutoStarted(tourId: ProductTourId, storage?: TourStorage |
 
 export function markTourAutoStarted(tourId: ProductTourId, storage?: TourStorage | null): void {
   storage?.setItem(getTourAutoStartedStorageKey(tourId), 'true')
+}
+
+export function getTourSeenVersion(tourId: ProductTourId, storage?: TourStorage | null): number | null {
+  const storedVersion = storage?.getItem(getTourSeenVersionStorageKey(tourId))
+  if (!storedVersion) return null
+
+  const parsedVersion = Number.parseInt(storedVersion, 10)
+  return Number.isFinite(parsedVersion) ? parsedVersion : null
+}
+
+export function markTourVersionSeen(tour: ProductTour, storage?: TourStorage | null): void {
+  storage?.setItem(getTourSeenVersionStorageKey(tour.id), String(tour.version))
+}
+
+export function getTourUpdateState(tour: ProductTour, storage?: TourStorage | null): ProductTourUpdateState {
+  const seenVersion = getTourSeenVersion(tour.id, storage)
+  if (seenVersion === null) return isTourCompleted(tour.id, storage) ? null : 'new'
+  if (seenVersion < tour.version) return 'updated'
+  return null
 }
 
 export function getActiveTourDemo(storage?: TourStorage | null): ProductTourId | null {
