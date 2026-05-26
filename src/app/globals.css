@@ -195,3 +195,14 @@
   background: rgb(37 99 235);
   color: white;
 }
+
+.alfabetiza-driver-popover .driver-popover-next-btn:hover {
+  background-color: rgb(29 78 216) !important;
+  color: white !important;
+  border-color: rgb(29 78 216) !important;
+}
+
+.alfabetiza-driver-popover .driver-popover-prev-btn:hover {
+  background-color: rgb(241 245 249) !important;
+  color: rgb(15 23 42) !important;
+}
