@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import NavigationHint from '@/components/navigation/NavigationHint'
+import TourLauncher from '@/components/tours/TourLauncher'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
 import { canManageSchools, canManageTeachers, canViewCoordinators, getStoredUser, type StoredUser } from '@/lib/client-auth'
 
@@ -117,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 bg-gray-800 text-white h-screen sticky top-0 flex flex-col flex-shrink-0">
+      <aside className="relative w-64 bg-gray-800 text-white h-screen sticky top-0 flex flex-col flex-shrink-0">
         <div className="p-4">
           <h1 className="text-xl font-bold">Alfabetiza</h1>
           {user && mounted && <p className="text-sm text-gray-300 mt-1">{user.name}</p>}
@@ -140,6 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="mt-4 flex-1 overflow-y-auto custom-scrollbar">
           <Link
             href="/dashboard"
+            data-tour="nav-dashboard"
             className={`block px-4 py-2 hover:bg-gray-700 ${pathname === '/dashboard' ? 'bg-gray-700' : ''}`}
           >
             {t('dashboard')}
@@ -147,6 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
           <Link
             href="/dashboard/students"
+            data-tour="nav-students"
             className={`block px-4 py-2 hover:bg-gray-700 ${pathname === '/dashboard/students' ? 'bg-gray-700' : ''}`}
           >
             {t('students')}
@@ -162,6 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {canManageTeachers(user) && (
             <Link
               href="/dashboard/teachers"
+              data-tour="nav-teachers"
               className={`block px-4 py-2 hover:bg-gray-700 ${pathname === '/dashboard/teachers' ? 'bg-gray-700' : ''}`}
             >
               {t('teachers')}
@@ -197,6 +201,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </nav>
         <div className="p-4 flex flex-col gap-4 border-t border-gray-700">
+          <TourLauncher user={mounted ? user : null} />
           <LanguageSwitcher />
           <button onClick={handleLogout} className="text-left text-sm text-gray-300 hover:text-white">
             {t('logout')}
@@ -204,7 +209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <main className="flex-1 p-8">
+      <main className="relative z-0 flex-1 p-8">
         {children}
       </main>
     </div>

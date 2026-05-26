@@ -367,6 +367,231 @@
     "RTF": "Lê Texto com Fluência",
     "selectLevel": "Selecionar nível"
   },
+  "tours": {
+    "launcher": "Ajuda guiada",
+    "menuTitle": "O que deseja aprender?",
+    "menuDescription": "Escolha um guia curto para a tarefa que está realizando.",
+    "browseByType": "Explorar por tipo de ajuda",
+    "back": "Voltar",
+    "sections": {
+      "suggested-now": "Sugerido agora",
+      "start-here": "Comece aqui",
+      "daily-workflows": "Rotinas do dia a dia",
+      "sharing-and-team": "Compartilhamento e equipe"
+    },
+    "sectionDescriptions": {
+      "start-here": "Conheça as telas principais e onde ficam as informações dos alunos.",
+      "daily-workflows": "Siga as rotinas recorrentes de avaliações e acompanhamento mensal.",
+      "sharing-and-team": "Compartilhe a evolução de leitura com famílias e convide a equipe."
+    },
+    "guideCount": {
+      "one": "guia",
+      "other": "guias"
+    },
+    "badges": {
+      "new": "Novo",
+      "updated": "Atualizado",
+      "suggested": "Sugerido",
+      "completed": "Concluído",
+      "exampleData": "Usa dados de exemplo se estiver vazio"
+    },
+    "unavailable": "Este guia ainda não está disponível na tela atual.",
+    "sampleBadge": "Exemplo",
+    "demoNoSave": "Estes são dados de exemplo do guia, então nada foi salvo.",
+    "buttons": {
+      "next": "Próximo",
+      "previous": "Voltar",
+      "done": "Concluir"
+    },
+    "dashboard-overview": {
+      "title": "Visão geral do painel",
+      "summary": "Leia os indicadores principais e filtre o painel.",
+      "steps": {
+        "filters": {
+          "title": "Filtre o painel",
+          "description": "Use os filtros de escola, turma, turno, mês e ano para focar no grupo que deseja revisar."
+        },
+        "monthly": {
+          "title": "Status mensal",
+          "description": "Esta área destaca alunos que ainda precisam de atualização de leitura no mês selecionado."
+        },
+        "improved": {
+          "title": "Alunos que evoluíram",
+          "description": "Este card é clicável. Selecione para abrir a lista de alunos que avançaram no nível de leitura neste mês."
+        },
+        "attention": {
+          "title": "Alunos que precisam de atenção",
+          "description": "Este card é clicável. Selecione para abrir os alunos cujo nível atual pede acompanhamento mais próximo."
+        },
+        "missingUpdates": {
+          "title": "Atualizações pendentes",
+          "description": "Este card é clicável. Selecione para abrir os alunos com avaliações ainda pendentes no mês selecionado."
+        },
+        "distribution": {
+          "title": "Distribuição de leitura",
+          "description": "Estes gráficos resumem como os alunos estão distribuídos entre os níveis de leitura."
+        }
+      }
+    },
+    "student-assessment": {
+      "title": "Fluxo de avaliação do aluno",
+      "summary": "Atualize o nível de leitura com segurança.",
+      "steps": {
+        "filters": {
+          "title": "Encontre o aluno certo",
+          "description": "Pesquise e filtre por escola, turma, mês e ano antes de atualizar uma avaliação de leitura."
+        },
+        "metrics": {
+          "title": "Use os cards de ação",
+          "description": "Estes cards ajudam a acessar alunos que precisam de atenção, atualização mensal ou revisão de evolução."
+        },
+        "updateButton": {
+          "title": "Abra o formulário",
+          "description": "Comece em Atualizar Nível. Este guia abrirá o formulário sem salvar nada."
+        },
+        "levelField": {
+          "title": "Escolha o nível de leitura",
+          "description": "Selecione o nível de leitura atual do aluno para esta avaliação."
+        },
+        "dateField": {
+          "title": "Confirme a data",
+          "description": "A data da avaliação define qual mês receberá a atualização."
+        },
+        "actions": {
+          "title": "Salvar ou cancelar",
+          "description": "Salvar registra a avaliação de leitura. Cancelar fecha o formulário sem alterar dados."
+        }
+      }
+    },
+    "invite-teachers": {
+      "title": "Convidar professores",
+      "summary": "Crie links de convite para professores.",
+      "steps": {
+        "inviteCard": {
+          "title": "Convites de professores",
+          "description": "Use esta área para convidar professores para acessar a escola."
+        },
+        "openInvite": {
+          "title": "Abra o formulário",
+          "description": "Este guia abrirá o formulário de convite sem enviá-lo."
+        },
+        "schoolField": {
+          "title": "Escolha a escola",
+          "description": "Selecione a escola em que o professor será vinculado."
+        },
+        "nameField": {
+          "title": "Informe o nome",
+          "description": "O nome aparece na lista de usuários e nos detalhes do convite."
+        },
+        "emailField": {
+          "title": "Informe o e-mail",
+          "description": "O professor usa este e-mail para aceitar o convite e criar a senha."
+        },
+        "actions": {
+          "title": "Crie o convite",
+          "description": "Criar um convite gera um link compartilhável. Este guia não envia o formulário."
+        },
+        "pendingInvites": {
+          "title": "Convites pendentes",
+          "description": "Convites pendentes ficam aqui até serem aceitos ou removidos."
+        }
+      }
+    },
+    "parent-report-sharing": {
+      "title": "Compartilhar relatório com responsáveis",
+      "summary": "Compartilhe a evolução de leitura com famílias.",
+      "steps": {
+        "openProfile": {
+          "title": "Abra o perfil do aluno",
+          "description": "Relatórios são compartilhados pelo perfil do aluno, então comece abrindo um aluno."
+        },
+        "contacts": {
+          "title": "Contatos dos responsáveis",
+          "description": "Salve contatos de responsáveis para facilitar o compartilhamento dos relatórios."
+        },
+        "reportCard": {
+          "title": "Compartilhamento de relatório",
+          "description": "Gere um link seguro para a família acompanhar a evolução de leitura."
+        },
+        "reportActions": {
+          "title": "Copiar ou compartilhar",
+          "description": "Use estas ações para gerar, copiar ou compartilhar o link do relatório."
+        },
+        "history": {
+          "title": "Contexto do histórico",
+          "description": "O relatório fica mais útil quando o histórico de leitura do aluno está atualizado."
+        }
+      }
+    },
+    "student-profile": {
+      "title": "Guia do perfil do aluno",
+      "summary": "Revise dados, progresso, histórico e comentários.",
+      "steps": {
+        "openProfile": {
+          "title": "Abra o perfil do aluno",
+          "description": "O perfil reúne progresso de leitura, contatos, relatórios e histórico em um só lugar."
+        },
+        "summary": {
+          "title": "Resumo do perfil",
+          "description": "Comece aqui para confirmar aluno, escola, turma e número."
+        },
+        "currentLevel": {
+          "title": "Nível atual",
+          "description": "Este selo mostra o nível de leitura registrado mais recentemente."
+        },
+        "reportEntry": {
+          "title": "Relatórios para família",
+          "description": "Contatos dos responsáveis e compartilhamento do relatório ficam no topo para acesso rápido."
+        },
+        "charts": {
+          "title": "Gráficos de progresso",
+          "description": "Os gráficos mostram como o nível de leitura do aluno mudou ao longo do tempo."
+        },
+        "history": {
+          "title": "Histórico de leitura",
+          "description": "A linha do tempo lista avaliações e comentários em contexto cronológico."
+        },
+        "commentary": {
+          "title": "Adicionar comentário",
+          "description": "Use comentários para registrar observações qualitativas sem mudar o nível de leitura."
+        }
+      }
+    },
+    "monthly-follow-up": {
+      "title": "Fluxo de acompanhamento mensal",
+      "summary": "Revise pendências, atenção e evolução.",
+      "steps": {
+        "monthly": {
+          "title": "Comece pelo mês",
+          "description": "O acompanhamento mensal começa verificando quais alunos ainda precisam de atualização."
+        },
+        "missingCard": {
+          "title": "Abra as pendências",
+          "description": "Clique neste card para abrir os alunos sem avaliação registrada no mês selecionado."
+        },
+        "actionFilters": {
+          "title": "Filtre a lista de ação",
+          "description": "Use os filtros para restringir a revisão por escola e mês."
+        },
+        "actionTable": {
+          "title": "Revise os alunos",
+          "description": "A tabela mostra os alunos incluídos nesta lista de acompanhamento."
+        },
+        "actionUpdate": {
+          "title": "Atualize pela lista",
+          "description": "Você pode atualizar o nível de leitura diretamente pela lista de acompanhamento."
+        },
+        "attentionCard": {
+          "title": "Revise a lista de atenção",
+          "description": "Clique neste card para abrir e revisar alunos que precisam de acompanhamento mais próximo."
+        },
+        "improvedCard": {
+          "title": "Celebre a evolução",
+          "description": "Clique neste card para abrir a lista de alunos que evoluíram no período selecionado."
+        }
+      }
+    }
+  },
   "errors": {
     "selectSchool": "Por favor selecione uma escola primeiro",
     "selectLevel": "Por favor selecione um nível de leitura",

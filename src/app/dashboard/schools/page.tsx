@@ -215,7 +215,7 @@ export default function SchoolsPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="!mt-0 fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96">
             <h2 className="text-xl font-bold mb-4">{t('add')}</h2>
             <form onSubmit={handleCreateSchool} className="space-y-4">
@@ -255,7 +255,7 @@ export default function SchoolsPage() {
       )}
 
       {editingSchool && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold mb-4">{t('editSchool')}</h2>
             <form onSubmit={handleUpdateSchool} className="space-y-4">

@@ -373,7 +373,7 @@ export default function ClassesPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('add')}</h2>
             <form onSubmit={handleCreateClass} className="space-y-4">
@@ -450,7 +450,7 @@ export default function ClassesPage() {
       )}
 
       {editingClass && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('editClass')}</h2>
             <form onSubmit={handleUpdateClass} className="space-y-4">

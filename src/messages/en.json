@@ -365,6 +365,231 @@
     "RTF": "Reads Text Fluently",
     "selectLevel": "Select level"
   },
+  "tours": {
+    "launcher": "Guided help",
+    "menuTitle": "What would you like to learn?",
+    "menuDescription": "Choose a short guide for the task you are working on.",
+    "browseByType": "Browse by help type",
+    "back": "Back",
+    "sections": {
+      "suggested-now": "Suggested now",
+      "start-here": "Start here",
+      "daily-workflows": "Daily workflows",
+      "sharing-and-team": "Sharing and team"
+    },
+    "sectionDescriptions": {
+      "start-here": "Learn the main screens and where student information lives.",
+      "daily-workflows": "Follow the recurring routines for assessments and monthly review.",
+      "sharing-and-team": "Share reading progress with families and invite teammates."
+    },
+    "guideCount": {
+      "one": "guide",
+      "other": "guides"
+    },
+    "badges": {
+      "new": "New",
+      "updated": "Updated",
+      "suggested": "Suggested",
+      "completed": "Completed",
+      "exampleData": "Uses example data when empty"
+    },
+    "unavailable": "This guide is not available on the current screen yet.",
+    "sampleBadge": "Example",
+    "demoNoSave": "This is example guide data, so nothing was saved.",
+    "buttons": {
+      "next": "Next",
+      "previous": "Back",
+      "done": "Done"
+    },
+    "dashboard-overview": {
+      "title": "Dashboard overview",
+      "summary": "Read the main indicators and filter the dashboard.",
+      "steps": {
+        "filters": {
+          "title": "Filter the dashboard",
+          "description": "Use school, class, shift, month, and year filters to focus the dashboard on the group you want to review."
+        },
+        "monthly": {
+          "title": "Monthly update status",
+          "description": "This area calls out students who still need a reading update for the selected month."
+        },
+        "improved": {
+          "title": "Students who improved",
+          "description": "This card is clickable. Select it to open the list of students who moved forward in their reading level this month."
+        },
+        "attention": {
+          "title": "Students needing attention",
+          "description": "This card is clickable. Select it to open the students whose current reading level needs closer follow-up."
+        },
+        "missingUpdates": {
+          "title": "Missing monthly updates",
+          "description": "This card is clickable. Select it to open the students with assessments still pending for the selected month."
+        },
+        "distribution": {
+          "title": "Reading distribution",
+          "description": "These charts summarize how students are distributed across reading levels."
+        }
+      }
+    },
+    "student-assessment": {
+      "title": "Student assessment flow",
+      "summary": "Update a student's reading level safely.",
+      "steps": {
+        "filters": {
+          "title": "Find the right student",
+          "description": "Search and filter by school, class, month, and year before updating a reading assessment."
+        },
+        "metrics": {
+          "title": "Use action cards",
+          "description": "These cards help you jump to students needing attention, monthly updates, or improvement review."
+        },
+        "updateButton": {
+          "title": "Open the assessment form",
+          "description": "Start from Update Level. This guide will open the form without saving anything."
+        },
+        "levelField": {
+          "title": "Choose the reading level",
+          "description": "Select the student's current reading level for this assessment."
+        },
+        "dateField": {
+          "title": "Confirm the date",
+          "description": "The assessment date controls which month receives the update."
+        },
+        "actions": {
+          "title": "Save or cancel",
+          "description": "Saving records the reading assessment. Cancel closes the form without changing data."
+        }
+      }
+    },
+    "invite-teachers": {
+      "title": "Invite Teachers",
+      "summary": "Create invite links for teachers.",
+      "steps": {
+        "inviteCard": {
+          "title": "Teacher invitations",
+          "description": "Use this section to invite teachers to access their school."
+        },
+        "openInvite": {
+          "title": "Open the invite form",
+          "description": "This guide will open the invite form without submitting it."
+        },
+        "schoolField": {
+          "title": "Choose the school",
+          "description": "Pick the school where the teacher should be assigned."
+        },
+        "nameField": {
+          "title": "Enter the teacher name",
+          "description": "The name appears in the user list and invite details."
+        },
+        "emailField": {
+          "title": "Enter the email",
+          "description": "The teacher uses this email to accept the invite and create a password."
+        },
+        "actions": {
+          "title": "Create the invite",
+          "description": "Creating an invite generates a shareable link. This guide does not submit the form."
+        },
+        "pendingInvites": {
+          "title": "Pending invites",
+          "description": "Pending invites stay here until the teacher accepts them or they are removed."
+        }
+      }
+    },
+    "parent-report-sharing": {
+      "title": "Parent report sharing",
+      "summary": "Share reading progress with families.",
+      "steps": {
+        "openProfile": {
+          "title": "Open a student profile",
+          "description": "Reports are shared from the student profile, so start by opening a student."
+        },
+        "contacts": {
+          "title": "Parent contacts",
+          "description": "Save parent or guardian contacts to make sharing reports easier."
+        },
+        "reportCard": {
+          "title": "Report sharing",
+          "description": "Generate a secure report link for the family to view reading progress."
+        },
+        "reportActions": {
+          "title": "Copy or share",
+          "description": "Use these actions to generate, copy, or share the report link."
+        },
+        "history": {
+          "title": "Reading history context",
+          "description": "The report is most useful when the student's reading history is up to date."
+        }
+      }
+    },
+    "student-profile": {
+      "title": "Student profile guide",
+      "summary": "Review profile details, progress, history, and comments.",
+      "steps": {
+        "openProfile": {
+          "title": "Open a student profile",
+          "description": "Profiles collect reading progress, contacts, reports, and history in one place."
+        },
+        "summary": {
+          "title": "Profile summary",
+          "description": "Start here to confirm the student, school, class, and number."
+        },
+        "currentLevel": {
+          "title": "Current level",
+          "description": "This badge shows the latest recorded reading level."
+        },
+        "reportEntry": {
+          "title": "Family reporting",
+          "description": "Parent contacts and report sharing sit near the top for quick access."
+        },
+        "charts": {
+          "title": "Progress charts",
+          "description": "Charts show how the student's reading level has changed over time."
+        },
+        "history": {
+          "title": "Reading history",
+          "description": "The timeline lists assessments and commentaries in chronological context."
+        },
+        "commentary": {
+          "title": "Add commentary",
+          "description": "Use commentaries to add qualitative notes without changing the reading level."
+        }
+      }
+    },
+    "monthly-follow-up": {
+      "title": "Monthly follow-up workflow",
+      "summary": "Review pending updates, attention, and improvement.",
+      "steps": {
+        "monthly": {
+          "title": "Start with the month",
+          "description": "Monthly follow-up begins by checking which students still need updates."
+        },
+        "missingCard": {
+          "title": "Open pending updates",
+          "description": "Click this card to open the students missing an assessment for the selected month."
+        },
+        "actionFilters": {
+          "title": "Filter the action list",
+          "description": "Use filters to narrow the review list to a school and month."
+        },
+        "actionTable": {
+          "title": "Review students",
+          "description": "The table shows the students included in this follow-up list."
+        },
+        "actionUpdate": {
+          "title": "Update from the list",
+          "description": "You can update a student's reading level directly from the follow-up list."
+        },
+        "attentionCard": {
+          "title": "Review attention list",
+          "description": "Click this card to open and review students who need closer attention."
+        },
+        "improvedCard": {
+          "title": "Celebrate improvement",
+          "description": "Click this card to open the list of students who improved during the selected period."
+        }
+      }
+    }
+  },
   "errors": {
     "selectSchool": "Please select a school first",
     "selectLevel": "Please select a reading level",

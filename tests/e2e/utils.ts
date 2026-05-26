@@ -1,6 +1,25 @@
 import { Page, expect } from '@playwright/test';
 
+const PRODUCT_TOUR_IDS = [
+  'dashboard-overview',
+  'student-assessment',
+  'invite-teachers',
+  'parent-report-sharing',
+  'student-profile',
+  'monthly-follow-up',
+]
+
+type LoginByApiOptions = {
+  suppressAutoTours?: boolean
+}
+
 export async function login(page: Page, email: string, password = 'playwright123') {
+  await page.addInitScript((tourIds) => {
+    for (const tourId of tourIds) {
+      localStorage.setItem(`alfabetiza:tours:auto-started:${tourId}`, 'true')
+    }
+  }, PRODUCT_TOUR_IDS)
+
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
   
@@ -26,7 +45,8 @@ export async function loginByApi(
   page: Page,
   email: string,
   password = 'playwright123',
-  selectedSchoolId = ''
+  selectedSchoolId = '',
+  options: LoginByApiOptions = {}
 ) {
   const response = await page.request.post('/api/auth', {
     data: {
@@ -45,5 +65,16 @@ export async function loginByApi(
     if (authState.selectedSchoolId) {
       localStorage.setItem('selectedSchool', authState.selectedSchoolId)
     }
-  }, { token, teacher, selectedSchoolId })
+    if (authState.suppressAutoTours) {
+      for (const tourId of authState.productTourIds) {
+        localStorage.setItem(`alfabetiza:tours:auto-started:${tourId}`, 'true')
+      }
+    }
+  }, {
+    token,
+    teacher,
+    selectedSchoolId,
+    suppressAutoTours: options.suppressAutoTours ?? true,
+    productTourIds: PRODUCT_TOUR_IDS,
+  })
 }

@@ -17,6 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  TOUR_DEMO_CONTACTS,
+  TOUR_DEMO_REPORT,
+} from '@/lib/product-tour-demo-data'
 
 type StudentContact = {
   id: string
@@ -43,6 +47,7 @@ type Props = {
   studentId: string
   studentName: string
   schoolName: string
+  demoMode?: boolean
 }
 
 const emptyContactForm: ContactForm = {
@@ -52,9 +57,10 @@ const emptyContactForm: ContactForm = {
   isPrimary: false,
 }
 
-export default function StudentContactsAndReportShare({ studentId }: Props) {
+export default function StudentContactsAndReportShare({ studentId, demoMode = false }: Props) {
   const t = useTranslations('students')
   const tCommon = useTranslations('common')
+  const tTours = useTranslations('tours')
   const [contacts, setContacts] = useState<StudentContact[]>([])
   const [contactForm, setContactForm] = useState<ContactForm>(emptyContactForm)
   const [selectedContactId, setSelectedContactId] = useState('')
@@ -66,6 +72,15 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
 
   useEffect(() => {
+    if (demoMode) {
+      queueMicrotask(() => {
+        setContacts(TOUR_DEMO_CONTACTS)
+        setSelectedContactId(TOUR_DEMO_CONTACTS[0]?.id || '')
+        setLoadingContacts(false)
+      })
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -83,7 +98,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
     }
 
     fetchContacts()
-  }, [studentId])
+  }, [studentId, demoMode])
 
   const selectedContact = contacts.find((contact) => contact.id === selectedContactId) || null
   const getRelationshipLabel = (relationship: string | null) => (
@@ -92,6 +107,12 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
 
   const saveContact = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (demoMode) {
+      setShowContactModal(false)
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -146,6 +167,11 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
   }
 
   const deleteContact = async (contactId: string) => {
+    if (demoMode) {
+      toast.info(tTours('demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -166,6 +192,12 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
   }
 
   const generateReport = async () => {
+    if (demoMode) {
+      setReport(TOUR_DEMO_REPORT)
+      toast.info(tTours('demoNoSave'))
+      return TOUR_DEMO_REPORT
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return null
 
@@ -203,7 +235,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
 
   return (
     <section className="mb-6 grid gap-6 lg:grid-cols-[6fr_4fr]">
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-white p-6 shadow" data-tour="student-parent-contacts">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Phone className="size-5 text-blue-600" />
@@ -263,7 +295,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
       </div>
 
       {showContactModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" data-app-modal="true">
           <div className="w-96 rounded-lg bg-white p-6 shadow-xl">
             <h2 className="mb-4 text-xl font-bold text-gray-800">
               {editingContactId ? tCommon('edit') : t('addContact')}
@@ -334,7 +366,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
         </div>
       )}
 
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-white p-6 shadow" data-tour="student-report-share">
         <div className="mb-4 flex items-center gap-2">
           <MessageCircle className="size-5 text-green-600" />
           <h2 className="text-lg font-semibold text-gray-800">{t('reportSharing')}</h2>
@@ -368,7 +400,7 @@ export default function StudentContactsAndReportShare({ studentId }: Props) {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" data-tour="student-report-actions">
             <button
               type="button"
               onClick={generateReport}

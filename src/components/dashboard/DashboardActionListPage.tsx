@@ -41,6 +41,12 @@ import {
 } from '@/lib/monthly-updates'
 import { getReadingLevelStyle } from '@/lib/reading-levels'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
+import { useTourDemoMode } from '@/components/tours/useTourDemoMode'
+import {
+  TOUR_DEMO_DASHBOARD_STATS,
+  TOUR_DEMO_READING_LEVELS,
+  TOUR_DEMO_STUDENT_ID,
+} from '@/lib/product-tour-demo-data'
 
 type ActionListKind = 'need-attention' | 'missing-updates' | 'improved'
 
@@ -102,6 +108,7 @@ export default function DashboardActionListPage({
 }: DashboardActionListPageProps) {
   const router = useRouter()
   const t = useTranslations()
+  const activeDemoTour = useTourDemoMode()
   const initialResolvedMonth = resolveMonthKey(initialMonth)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [schools, setSchools] = useState<School[]>([])
@@ -287,6 +294,17 @@ export default function DashboardActionListPage({
 
   const handleUpdateLevel = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (updateLevel.studentId === TOUR_DEMO_STUDENT_ID) {
+      setUpdateLevel({
+        studentId: '',
+        readingLevelId: '',
+        notes: '',
+        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+      })
+      toast.info(t('tours.demoNoSave'))
+      return
+    }
+
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -317,11 +335,21 @@ export default function DashboardActionListPage({
     }
   }
 
+  const shouldShowDemoStats = (
+    activeDemoTour === 'monthly-follow-up' &&
+    (!stats || (
+      stats.needAttention.length === 0 &&
+      stats.improved.length === 0 &&
+      stats.monthlyUpdates.missingStudents.length === 0
+    ))
+  )
+  const visibleStats = shouldShowDemoStats ? TOUR_DEMO_DASHBOARD_STATS : stats
+  const visibleLevels = levels.length > 0 ? levels : TOUR_DEMO_READING_LEVELS
   const students = kind === 'need-attention'
-    ? stats?.needAttention || []
+    ? visibleStats?.needAttention || []
     : kind === 'improved'
-    ? stats?.improved || []
-    : stats?.monthlyUpdates.missingStudents || []
+    ? visibleStats?.improved || []
+    : visibleStats?.monthlyUpdates.missingStudents || []
   if (loading) {
     return <ActionListSkeleton />
   }
@@ -340,7 +368,7 @@ export default function DashboardActionListPage({
         </div>
       </div>
 
-      <Card className="mb-6">
+      <Card className="mb-6" data-tour="action-list-filters">
         <CardContent className="p-4">
           <div className="grid gap-4 md:flex md:flex-wrap md:items-end">
             <div className="space-y-1 md:w-56">
@@ -393,7 +421,7 @@ export default function DashboardActionListPage({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour="action-list-table">
         <CardContent className="p-0">
           {students.length === 0 ? (
             <div className="p-8 text-center text-gray-700">{emptyMessage}</div>
@@ -418,6 +446,11 @@ export default function DashboardActionListPage({
                       <td className="p-4 text-gray-800 font-medium">
                         <Link href={`/dashboard/students/${student.id}`} className="text-blue-600 hover:underline">
                           {student.name}
+                          {student.id === TOUR_DEMO_STUDENT_ID && (
+                            <span className="ml-2 rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                              {t('tours.sampleBadge')}
+                            </span>
+                          )}
                         </Link>
                       </td>
                       <td className="p-4 text-gray-800">{student.studentNumber}</td>
@@ -446,6 +479,7 @@ export default function DashboardActionListPage({
                         <div className="flex items-center gap-4">
                           <Button
                             type="button"
+                            data-tour="action-list-update-level-button"
                             variant="link"
                             size="sm"
                             onClick={() => {
@@ -492,7 +526,7 @@ export default function DashboardActionListPage({
 
       {/* Edit Modal */}
       {editingStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('students.editStudent')}</h2>
             <form onSubmit={handleUpdateStudent} className="space-y-4">
@@ -540,7 +574,7 @@ export default function DashboardActionListPage({
 
       {/* Update Level Modal */}
       {updateLevel.studentId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('students.updateLevel')}</h2>
             <form onSubmit={handleUpdateLevel} className="space-y-4">
@@ -554,7 +588,7 @@ export default function DashboardActionListPage({
                     <SelectValue placeholder={t('levels.selectLevel')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {levels.map((level) => (
+                    {visibleLevels.map((level) => (
                       <SelectItem key={level.id} value={level.id}>
                         {t(`levels.${level.code}`)}
                       </SelectItem>
@@ -583,7 +617,13 @@ export default function DashboardActionListPage({
                 <Button type="submit" className="flex-1">
                   {t('common.save')}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })} className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-tour="assessment-cancel"
+                  onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })}
+                  className="flex-1"
+                >
                   {t('common.cancel')}
                 </Button>
               </div>

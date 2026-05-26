@@ -30,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useTourDemoMode } from '@/components/tours/useTourDemoMode'
+import { TOUR_DEMO_DASHBOARD_STATS } from '@/lib/product-tour-demo-data'
 
 const DashboardCharts = dynamic(() => import('@/components/dashboard/DashboardCharts'), {
   loading: () => <ChartSkeleton />,
@@ -67,6 +69,7 @@ interface Stats {
 export default function DashboardPage() {
   const router = useRouter()
   const t = useTranslations()
+  const activeDemoTour = useTourDemoMode()
   const [stats, setStats] = useState<Stats | null>(null)
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([])
   const [classes, setClasses] = useState<{ id: string; grade: string; section: string; shift: string }[]>([])
@@ -202,11 +205,16 @@ export default function DashboardPage() {
     return <DashboardSkeleton />
   }
 
-  const isCurrent = stats?.monthlyUpdates.monthStatus === 'current'
+  const shouldShowDemoStats = (
+    (activeDemoTour === 'dashboard-overview' || activeDemoTour === 'monthly-follow-up') &&
+    (!stats || stats.totalStudents === 0)
+  )
+  const visibleStats = shouldShowDemoStats ? TOUR_DEMO_DASHBOARD_STATS : stats
+  const isCurrent = visibleStats?.monthlyUpdates.monthStatus === 'current'
   const missingUpdatesHref = buildDashboardActionListHref('/dashboard/students/missing-updates', { month: selectedMonth, schoolId, from: 'dashboard' })
   const needAttentionHref = buildDashboardActionListHref('/dashboard/students/need-attention', { month: selectedMonth, schoolId, from: 'dashboard' })
   const improvedHref = buildDashboardActionListHref('/dashboard/students/improved', { month: selectedMonth, schoolId, from: 'dashboard' })
-  const chartDistribution = stats?.distribution.map((item) => ({
+  const chartDistribution = visibleStats?.distribution.map((item) => ({
     ...item,
     translatedName: t(`levels.${item.level}`),
   })) || []
@@ -217,7 +225,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-800">{t('dashboard.title')}</h1>
       </div>
 
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
+      <div className="mb-6 bg-white p-4 rounded-lg shadow" data-tour="dashboard-filters">
         <div className="grid gap-4 md:flex md:flex-wrap md:items-end">
           <div className="space-y-1 md:min-w-56 md:flex-1">
             <Label className="text-gray-700">{t('classes.school')}</Label>
@@ -310,7 +318,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {!stats || stats.totalStudents === 0 ? (
+      {!visibleStats || visibleStats.totalStudents === 0 ? (
         <div className="bg-white p-8 rounded-lg shadow text-center text-gray-700">
           {t('dashboard.noData')}
         </div>
@@ -318,15 +326,15 @@ export default function DashboardPage() {
         <>
 
       {/* Current month: urgent warning banner */}
-      {isCurrent && stats.monthlyUpdates.missingCount > 0 && (
+      {isCurrent && visibleStats.monthlyUpdates.missingCount > 0 && (
         <Alert variant="warning" className="mb-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <AlertTitle>{t('dashboard.monthlyUpdateAlertTitle')}</AlertTitle>
               <AlertDescription>
                 {t('dashboard.monthlyUpdateAlertDescription', {
-                  count: stats.monthlyUpdates.missingCount,
-                  month: stats.monthlyUpdates.month,
+                  count: visibleStats.monthlyUpdates.missingCount,
+                  month: visibleStats.monthlyUpdates.month,
                 })}
               </AlertDescription>
             </div>
@@ -340,12 +348,12 @@ export default function DashboardPage() {
       )}
 
       {/* Past month: neutral informational banner */}
-      {!isCurrent && stats.monthlyUpdates.missingCount > 0 && (
+      {!isCurrent && visibleStats.monthlyUpdates.missingCount > 0 && (
         <Alert variant="default" className="mb-6">
           <AlertDescription>
             {t('dashboard.pastMonthInfoDescription', {
-              count: stats.monthlyUpdates.missingCount,
-              month: stats.monthlyUpdates.month,
+              count: visibleStats.monthlyUpdates.missingCount,
+              month: visibleStats.monthlyUpdates.month,
             })}
           </AlertDescription>
         </Alert>
@@ -354,34 +362,34 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 text-sm">{t('dashboard.totalStudents')}</h3>
-          <p className="text-3xl font-bold text-gray-800">{stats.totalStudents}</p>
+          <p className="text-3xl font-bold text-gray-800">{visibleStats.totalStudents}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-gray-600 text-sm">{t('dashboard.mostCommonLevel')}</h3>
           <p className="text-2xl font-bold text-gray-800">
-            {stats.mostCommonLevel ? t(`levels.${stats.mostCommonLevel}`) : '-'}
+            {visibleStats.mostCommonLevel ? t(`levels.${visibleStats.mostCommonLevel}`) : '-'}
           </p>
         </div>
-        <Link href={improvedHref} data-testid="dashboard-improved-card">
+        <Link href={improvedHref} data-testid="dashboard-improved-card" data-tour="dashboard-improved-card">
           <div className="bg-white p-6 rounded-lg shadow transition-shadow hover:shadow-md cursor-pointer h-full">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-gray-600 text-sm">{t('dashboard.improvedThisMonth')}</h3>
                 <p className="text-3xl font-bold text-green-600" data-testid="dashboard-improved-count">
-                  {stats.improvedCount ?? 0}
+                  {visibleStats.improvedCount ?? 0}
                 </p>
               </div>
               <ArrowRight className="size-4 text-muted-foreground mt-1" />
             </div>
           </div>
         </Link>
-        <Link href={needAttentionHref} data-testid="dashboard-need-attention-card">
+        <Link href={needAttentionHref} data-testid="dashboard-need-attention-card" data-tour="dashboard-need-attention-card">
           <div className="bg-white p-6 rounded-lg shadow transition-shadow hover:shadow-md cursor-pointer h-full">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-gray-600 text-sm">{t('dashboard.needAttention')}</h3>
                 <p className="text-3xl font-bold text-red-600" data-testid="dashboard-need-attention-count">
-                  {stats.needAttention.length}
+                  {visibleStats.needAttention.length}
                 </p>
               </div>
               <ArrowRight className="size-4 text-muted-foreground mt-1" />
@@ -391,17 +399,17 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card>
+        <Card data-tour="dashboard-monthly-updated-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {t('dashboard.updatedThisMonth')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-green-600">{stats.monthlyUpdates.updatedCount}</p>
+            <p className="text-3xl font-bold text-green-600">{visibleStats.monthlyUpdates.updatedCount}</p>
           </CardContent>
         </Card>
-        <Link href={missingUpdatesHref} data-testid="dashboard-missing-updates-card">
+        <Link href={missingUpdatesHref} data-testid="dashboard-missing-updates-card" data-tour="dashboard-missing-updates-card">
           <Card className="transition-shadow hover:shadow-md cursor-pointer h-full">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between gap-3">
@@ -413,14 +421,14 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-amber-600" data-testid="dashboard-missing-updates-count">
-                {stats.monthlyUpdates.missingCount}
+                {visibleStats.monthlyUpdates.missingCount}
               </p>
             </CardContent>
           </Card>
         </Link>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6" data-tour="dashboard-reading-distribution">
         <DashboardCharts
           distribution={chartDistribution}
           distributionTitle={t('dashboard.distribution')}
