@@ -118,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 bg-gray-800 text-white h-screen sticky top-0 flex flex-col flex-shrink-0">
+      <aside className="relative z-50 w-64 bg-gray-800 text-white h-screen sticky top-0 flex flex-col flex-shrink-0">
         <div className="p-4">
           <h1 className="text-xl font-bold">Alfabetiza</h1>
           {user && mounted && <p className="text-sm text-gray-300 mt-1">{user.name}</p>}
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <main className="flex-1 p-8">
+      <main className="relative z-0 flex-1 p-8">
         {children}
       </main>
     </div>

@@ -368,14 +368,34 @@
     "selectLevel": "Selecionar nível"
   },
   "tours": {
-    "launcher": "Tours",
-    "menuTitle": "Tours guiados",
-    "menuDescription": "Escolha um fluxo para revisar.",
-    "completed": "Feito",
-    "unavailable": "Este tour ainda não está disponível na tela atual.",
-    "sampleHint": "Começa com dados de exemplo quando a página está vazia.",
+    "launcher": "Ajuda guiada",
+    "menuTitle": "O que deseja aprender?",
+    "menuDescription": "Escolha um guia curto para a tarefa que está realizando.",
+    "browseByType": "Explorar por tipo de ajuda",
+    "back": "Voltar",
+    "sections": {
+      "suggested-now": "Sugerido agora",
+      "start-here": "Comece aqui",
+      "daily-workflows": "Rotinas do dia a dia",
+      "sharing-and-team": "Compartilhamento e equipe"
+    },
+    "sectionDescriptions": {
+      "start-here": "Conheça as telas principais e onde ficam as informações dos alunos.",
+      "daily-workflows": "Siga as rotinas recorrentes de avaliações e acompanhamento mensal.",
+      "sharing-and-team": "Compartilhe a evolução de leitura com famílias e convide a equipe."
+    },
+    "guideCount": {
+      "one": "guia",
+      "other": "guias"
+    },
+    "badges": {
+      "suggested": "Sugerido",
+      "completed": "Concluído",
+      "exampleData": "Usa dados de exemplo se estiver vazio"
+    },
+    "unavailable": "Este guia ainda não está disponível na tela atual.",
     "sampleBadge": "Exemplo",
-    "demoNoSave": "Estes são dados de exemplo do tour, então nada foi salvo.",
+    "demoNoSave": "Estes são dados de exemplo do guia, então nada foi salvo.",
     "buttons": {
       "next": "Próximo",
       "previous": "Voltar",
@@ -383,7 +403,7 @@
     },
     "dashboard-overview": {
       "title": "Visão geral do painel",
-      "summary": "Entenda filtros, métricas e distribuição de leitura.",
+      "summary": "Leia os indicadores principais e filtre o painel.",
       "steps": {
         "filters": {
           "title": "Filtre o painel",
@@ -413,7 +433,7 @@
     },
     "student-assessment": {
       "title": "Fluxo de avaliação do aluno",
-      "summary": "Aprenda a atualizar o nível de leitura.",
+      "summary": "Atualize o nível de leitura com segurança.",
       "steps": {
         "filters": {
           "title": "Encontre o aluno certo",
@@ -425,7 +445,7 @@
         },
         "updateButton": {
           "title": "Abra o formulário",
-          "description": "Comece em Atualizar Nível. O tour abrirá o formulário sem salvar nada."
+          "description": "Comece em Atualizar Nível. Este guia abrirá o formulário sem salvar nada."
         },
         "levelField": {
           "title": "Escolha o nível de leitura",
@@ -443,7 +463,7 @@
     },
     "invite-teachers": {
       "title": "Convidar professores",
-      "summary": "Crie e compartilhe links de convite.",
+      "summary": "Crie links de convite para professores.",
       "steps": {
         "inviteCard": {
           "title": "Convites de professores",
@@ -451,7 +471,7 @@
         },
         "openInvite": {
           "title": "Abra o formulário",
-          "description": "O tour abrirá o formulário de convite sem enviá-lo."
+          "description": "Este guia abrirá o formulário de convite sem enviá-lo."
         },
         "schoolField": {
           "title": "Escolha a escola",
@@ -467,7 +487,7 @@
         },
         "actions": {
           "title": "Crie o convite",
-          "description": "Criar um convite gera um link compartilhável. Este tour não envia o formulário."
+          "description": "Criar um convite gera um link compartilhável. Este guia não envia o formulário."
         },
         "pendingInvites": {
           "title": "Convites pendentes",
@@ -477,7 +497,7 @@
     },
     "parent-report-sharing": {
       "title": "Compartilhar relatório com responsáveis",
-      "summary": "Gere e compartilhe o relatório de leitura.",
+      "summary": "Compartilhe a evolução de leitura com famílias.",
       "steps": {
         "openProfile": {
           "title": "Abra o perfil do aluno",
@@ -502,7 +522,7 @@
       }
     },
     "student-profile": {
-      "title": "Tour do perfil do aluno",
+      "title": "Guia do perfil do aluno",
       "summary": "Revise dados, progresso, histórico e comentários.",
       "steps": {
         "openProfile": {
@@ -537,7 +557,7 @@
     },
     "monthly-follow-up": {
       "title": "Fluxo de acompanhamento mensal",
-      "summary": "Revise pendências, atenção e evolução dos alunos.",
+      "summary": "Revise pendências, atenção e evolução.",
       "steps": {
         "monthly": {
           "title": "Comece pelo mês",

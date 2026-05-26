@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  GUIDED_HELP_ATTENTION_STORAGE_KEY,
   filterAvailableTourSteps,
   findMissingTourAnchor,
   clearActiveTourDemo,
@@ -7,6 +8,11 @@ import {
   getAutoStartTourIdForPath,
   getAvailableTours,
   getDriverProgressText,
+  getGuidedHelpCategories,
+  getGuidedHelpCategoryGuideCount,
+  getGuidedHelpSections,
+  getGuidedHelpToursForCategory,
+  getSuggestedTourForPath,
   getTourAutoStartedStorageKey,
   getTourStartReadiness,
   getTourStorageKey,
@@ -65,27 +71,27 @@ describe('product tours', () => {
   it('limits available tours by user permissions', () => {
     expect(tourIdsFor(teacher)).toEqual([
       'dashboard-overview',
-      'parent-report-sharing',
       'student-profile',
       'monthly-follow-up',
+      'parent-report-sharing',
     ])
 
     expect(tourIdsFor(coordinator)).toEqual([
       'dashboard-overview',
-      'student-assessment',
-      'invite-teachers',
-      'parent-report-sharing',
       'student-profile',
+      'student-assessment',
       'monthly-follow-up',
+      'parent-report-sharing',
+      'invite-teachers',
     ])
 
     expect(tourIdsFor(admin)).toEqual([
       'dashboard-overview',
-      'student-assessment',
-      'invite-teachers',
-      'parent-report-sharing',
       'student-profile',
+      'student-assessment',
       'monthly-follow-up',
+      'parent-report-sharing',
+      'invite-teachers',
     ])
   })
 
@@ -99,6 +105,10 @@ describe('product tours', () => {
     markTourCompleted(tourId, storage)
 
     expect(isTourCompleted(tourId, storage)).toBe(true)
+  })
+
+  it('uses a stable storage key for the guided help attention cue', () => {
+    expect(GUIDED_HELP_ATTENTION_STORAGE_KEY).toBe('alfabetiza:guided-help:attention-dismissed')
   })
 
   it('stores auto-started tours separately from completed tours', () => {
@@ -147,6 +157,78 @@ describe('product tours', () => {
     expect(getAutoStartTourIdForPath('/dashboard/students/missing-updates', teacher)).toBe('monthly-follow-up')
   })
 
+  it('selects the suggested guide for the current route', () => {
+    const availableTours = getAvailableTours(coordinator)
+
+    expect(getSuggestedTourForPath('/dashboard', coordinator, availableTours)?.id).toBe('dashboard-overview')
+    expect(getSuggestedTourForPath('/dashboard/students', coordinator, availableTours)?.id).toBe('student-assessment')
+    expect(getSuggestedTourForPath('/dashboard/students', teacher, getAvailableTours(teacher))).toBeNull()
+    expect(getSuggestedTourForPath('/dashboard/teachers', coordinator, availableTours)?.id).toBe('invite-teachers')
+  })
+
+  it('groups guides and removes the suggested guide from its normal section', () => {
+    const availableTours = getAvailableTours(coordinator)
+    const suggestedTour = getSuggestedTourForPath('/dashboard/students', coordinator, availableTours)
+    const sections = getGuidedHelpSections(availableTours, suggestedTour)
+
+    expect(sections.map((section) => section.id)).toEqual([
+      'suggested-now',
+      'start-here',
+      'daily-workflows',
+      'sharing-and-team',
+    ])
+    expect(sections[0].tours.map((tour) => tour.id)).toEqual(['student-assessment'])
+    expect(sections[1].tours.map((tour) => tour.id)).toEqual([
+      'dashboard-overview',
+      'student-profile',
+    ])
+    expect(sections[2].tours.map((tour) => tour.id)).toEqual(['monthly-follow-up'])
+    expect(sections[3].tours.map((tour) => tour.id)).toEqual([
+      'parent-report-sharing',
+      'invite-teachers',
+    ])
+  })
+
+  it('groups guides without a suggested section when no guide is recommended', () => {
+    const sections = getGuidedHelpSections(getAvailableTours(teacher), null)
+
+    expect(sections.map((section) => section.id)).toEqual([
+      'start-here',
+      'daily-workflows',
+      'sharing-and-team',
+    ])
+    expect(sections.flatMap((section) => section.tours.map((tour) => tour.id))).toEqual([
+      'dashboard-overview',
+      'student-profile',
+      'monthly-follow-up',
+      'parent-report-sharing',
+    ])
+  })
+
+  it('returns available help categories with guide counts by permission', () => {
+    expect(getGuidedHelpCategories(getAvailableTours(teacher))).toEqual([
+      { id: 'start-here', count: 2 },
+      { id: 'daily-workflows', count: 1 },
+      { id: 'sharing-and-team', count: 1 },
+    ])
+
+    expect(getGuidedHelpCategories(getAvailableTours(coordinator))).toEqual([
+      { id: 'start-here', count: 2 },
+      { id: 'daily-workflows', count: 2 },
+      { id: 'sharing-and-team', count: 2 },
+    ])
+  })
+
+  it('returns guides for one help category without removing the suggested guide', () => {
+    const availableTours = getAvailableTours(coordinator)
+
+    expect(getGuidedHelpToursForCategory(availableTours, 'daily-workflows').map((tour) => tour.id)).toEqual([
+      'student-assessment',
+      'monthly-follow-up',
+    ])
+    expect(getGuidedHelpCategoryGuideCount(availableTours, 'sharing-and-team')).toBe(2)
+  })
+
   it('finds the first missing tour anchor before a tour starts', () => {
     const steps: TourStep[] = [
       { element: '[data-tour="present"]' },
@@ -166,6 +248,8 @@ describe('product tours', () => {
         route: '/dashboard/students',
         requiredAnchor: 'students-update-level-button',
         supportsDemoData: true,
+        category: 'daily-workflows',
+        order: 10,
         requires: 'manage-students',
       },
       () => false,
@@ -176,6 +260,8 @@ describe('product tours', () => {
         id: 'invite-teachers',
         route: '/dashboard/teachers',
         requiredAnchor: 'teachers-invite-card',
+        category: 'sharing-and-team',
+        order: 20,
         requires: 'manage-teachers',
       },
       () => false,
@@ -188,6 +274,8 @@ describe('product tours', () => {
         requiredAnchor: 'dashboard-filters',
         startAnchors: ['dashboard-filters', 'dashboard-reading-distribution'],
         supportsDemoData: true,
+        category: 'start-here',
+        order: 10,
         requires: 'authenticated',
       },
       () => true,

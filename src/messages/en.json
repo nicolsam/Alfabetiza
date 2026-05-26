@@ -366,14 +366,34 @@
     "selectLevel": "Select level"
   },
   "tours": {
-    "launcher": "Tours",
-    "menuTitle": "Guided tours",
-    "menuDescription": "Pick a workflow to review.",
-    "completed": "Done",
-    "unavailable": "This tour is not available on the current screen yet.",
-    "sampleHint": "Starts with sample data when the page is empty.",
+    "launcher": "Guided help",
+    "menuTitle": "What would you like to learn?",
+    "menuDescription": "Choose a short guide for the task you are working on.",
+    "browseByType": "Browse by help type",
+    "back": "Back",
+    "sections": {
+      "suggested-now": "Suggested now",
+      "start-here": "Start here",
+      "daily-workflows": "Daily workflows",
+      "sharing-and-team": "Sharing and team"
+    },
+    "sectionDescriptions": {
+      "start-here": "Learn the main screens and where student information lives.",
+      "daily-workflows": "Follow the recurring routines for assessments and monthly review.",
+      "sharing-and-team": "Share reading progress with families and invite teammates."
+    },
+    "guideCount": {
+      "one": "guide",
+      "other": "guides"
+    },
+    "badges": {
+      "suggested": "Suggested",
+      "completed": "Completed",
+      "exampleData": "Uses example data when empty"
+    },
+    "unavailable": "This guide is not available on the current screen yet.",
     "sampleBadge": "Example",
-    "demoNoSave": "This is sample tour data, so nothing was saved.",
+    "demoNoSave": "This is example guide data, so nothing was saved.",
     "buttons": {
       "next": "Next",
       "previous": "Back",
@@ -381,7 +401,7 @@
     },
     "dashboard-overview": {
       "title": "Dashboard overview",
-      "summary": "Understand filters, metrics, and reading distribution.",
+      "summary": "Read the main indicators and filter the dashboard.",
       "steps": {
         "filters": {
           "title": "Filter the dashboard",
@@ -411,7 +431,7 @@
     },
     "student-assessment": {
       "title": "Student assessment flow",
-      "summary": "Learn how to update a student's reading level.",
+      "summary": "Update a student's reading level safely.",
       "steps": {
         "filters": {
           "title": "Find the right student",
@@ -423,7 +443,7 @@
         },
         "updateButton": {
           "title": "Open the assessment form",
-          "description": "Start from Update Level. The tour will open the form without saving anything."
+          "description": "Start from Update Level. This guide will open the form without saving anything."
         },
         "levelField": {
           "title": "Choose the reading level",
@@ -441,7 +461,7 @@
     },
     "invite-teachers": {
       "title": "Invite Teachers",
-      "summary": "Create and share teacher invite links.",
+      "summary": "Create invite links for teachers.",
       "steps": {
         "inviteCard": {
           "title": "Teacher invitations",
@@ -449,7 +469,7 @@
         },
         "openInvite": {
           "title": "Open the invite form",
-          "description": "The tour will open the invite form without submitting it."
+          "description": "This guide will open the invite form without submitting it."
         },
         "schoolField": {
           "title": "Choose the school",
@@ -465,7 +485,7 @@
         },
         "actions": {
           "title": "Create the invite",
-          "description": "Creating an invite generates a shareable link. This tour does not submit the form."
+          "description": "Creating an invite generates a shareable link. This guide does not submit the form."
         },
         "pendingInvites": {
           "title": "Pending invites",
@@ -475,7 +495,7 @@
     },
     "parent-report-sharing": {
       "title": "Parent report sharing",
-      "summary": "Generate and share a student reading report.",
+      "summary": "Share reading progress with families.",
       "steps": {
         "openProfile": {
           "title": "Open a student profile",
@@ -500,7 +520,7 @@
       }
     },
     "student-profile": {
-      "title": "Student profile walkthrough",
+      "title": "Student profile guide",
       "summary": "Review profile details, progress, history, and comments.",
       "steps": {
         "openProfile": {
@@ -535,7 +555,7 @@
     },
     "monthly-follow-up": {
       "title": "Monthly follow-up workflow",
-      "summary": "Review pending, attention, and improved student lists.",
+      "summary": "Review pending updates, attention, and improvement.",
       "steps": {
         "monthly": {
           "title": "Start with the month",
