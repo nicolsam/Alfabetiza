@@ -573,7 +573,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {showUpdateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{t('updateLevel')}</h2>
             <form onSubmit={handleUpdateLevel} className="space-y-4">
@@ -624,7 +624,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {editingItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
+        <div className="!mt-0 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-app-modal="true">
           <div className="bg-white p-6 rounded-lg w-[500px] max-w-[90vw] shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">{tCommon('edit') || 'Editar'}</h2>
             <form onSubmit={handleEditSubmit} className="space-y-4">

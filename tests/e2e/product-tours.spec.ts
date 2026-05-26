@@ -124,6 +124,7 @@ test.describe('Product tours', () => {
     await page.getByRole('button', { name: /Add Student/i }).click()
     await expect(page.locator('[data-tour="guided-help-menu"]')).toBeHidden()
     await expect(page.locator('[data-app-modal="true"]')).toBeVisible()
+    await expect(page.locator('[data-app-modal="true"]')).toHaveCSS('margin-top', '0px')
     await expectSidebarCoveredByModal(page)
   })
 

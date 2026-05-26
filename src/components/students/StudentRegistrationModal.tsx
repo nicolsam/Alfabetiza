@@ -152,7 +152,7 @@ export default function StudentRegistrationModal({ classes, formatClassName, onC
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-app-modal="true">
+    <div className="!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-app-modal="true">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>

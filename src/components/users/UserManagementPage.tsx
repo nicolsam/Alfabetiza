@@ -414,7 +414,7 @@ export default function UserManagementPage({
       </Card>
 
       {showInviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-app-modal="true">
+        <div className="!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-app-modal="true">
           <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl" data-tour={role === 'TEACHER' ? 'teacher-invite-modal' : undefined}>
             {inviteStep === 'form' ? (
               <form onSubmit={handleInvite} className="space-y-4" noValidate>
@@ -533,7 +533,7 @@ export default function UserManagementPage({
       )}
 
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-app-modal="true">
+        <div className="!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" data-app-modal="true">
           <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
             <form onSubmit={handleUpdateUser} className="space-y-4">
               <div>
