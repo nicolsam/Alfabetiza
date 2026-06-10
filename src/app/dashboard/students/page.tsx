@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import Link from 'next/link'
-import { ArrowRight, Pencil, Search, Trash2 } from "lucide-react"
+import { ArrowRight, FileSpreadsheet, Pencil, Search, Trash2 } from "lucide-react"
 import { getReadingLevelStyle } from '@/lib/reading-levels'
 import { buildDashboardActionListHref } from '@/lib/dashboard-action-lists'
 import { getStudentMetricCounts } from '@/lib/student-metrics'
@@ -48,6 +48,9 @@ import { canManageSchoolScopedRecords, getStoredUser, type StoredUser } from '@/
 import StudentRegistrationModal, {
   type StudentRegistrationPayload,
 } from '@/components/students/StudentRegistrationModal'
+import StudentImportModal, {
+  type StudentImportResultSummary,
+} from '@/components/students/StudentImportModal'
 import { useTourDemoMode } from '@/components/tours/useTourDemoMode'
 import {
   TOUR_DEMO_READING_LEVELS,
@@ -89,6 +92,9 @@ interface ReadingLevel {
   code: string
   name: string
   order: number
+  color?: string | null
+  backgroundColor?: string | null
+  textColor?: string | null
 }
 
 interface School {
@@ -154,6 +160,7 @@ export default function StudentsPage() {
   }
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [error, setError] = useState('')
 
   // Filters
@@ -299,6 +306,13 @@ export default function StudentsPage() {
       const data = await res.json()
       return data.error || tErrors('failedCreate')
     }
+  }
+
+  const handleImportStudents = async (summary: StudentImportResultSummary) => {
+    clearClientGetCache('/api/students')
+    clearClientGetCache('/api/dashboard')
+    await fetchData(true)
+    toast.success(t('importComplete', { count: summary.importedRows }))
   }
 
   const handleUpdateStudent = async (e: React.FormEvent) => {
@@ -467,9 +481,15 @@ export default function StudentsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
         {canManageStudents && (
-          <Button onClick={() => setShowModal(true)}>
-            {t('add')}
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowImportModal(true)} data-testid="student-import-open">
+              <FileSpreadsheet className="size-4" />
+              {t('importStudents')}
+            </Button>
+            <Button onClick={() => setShowModal(true)}>
+              {t('add')}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -754,6 +774,18 @@ export default function StudentsPage() {
           formatClassName={formatClassName}
           onCancel={() => setShowModal(false)}
           onSubmit={handleCreateStudent}
+        />
+      )}
+
+      {showImportModal && (
+        <StudentImportModal
+          classes={classes}
+          levels={visibleLevels}
+          userId={user?.id}
+          formatClassName={formatClassName}
+          initialMonth={selectedMonth}
+          onCancel={() => setShowImportModal(false)}
+          onImported={handleImportStudents}
         />
       )}
 

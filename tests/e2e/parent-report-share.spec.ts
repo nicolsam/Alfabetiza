@@ -147,7 +147,7 @@ test.describe('parent report sharing', () => {
     await page.getByRole('combobox').filter({ hasText: /Selecionar uma turma|Select a class/ }).click()
     await page.getByRole('option', { name: /1º Ano P/ }).click()
     await page.getByPlaceholder(/Nome|Name/).fill('E2E Created With Contact')
-    await page.getByPlaceholder(/Número do Aluno|Student Number/).fill(CREATED_STUDENT_NUMBER)
+    await page.getByPlaceholder(/Matrícula|Enrollment ID|Número do Aluno|Student Number/).fill(CREATED_STUDENT_NUMBER)
     await page.getByRole('button', { name: /^(Avançar|Next)$/ }).click()
 
     await page.getByPlaceholder(/Nome do contato|Contact name/).fill('Created Parent')
