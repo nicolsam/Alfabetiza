@@ -515,6 +515,44 @@
         }
       }
     },
+    "student-import": {
+      "title": "Import students",
+      "summary": "Add many students and reading levels from one grid.",
+      "steps": {
+        "openButton": {
+          "title": "Open the import tool",
+          "description": "Start here when you need to add several students or reading assessments at once."
+        },
+        "classField": {
+          "title": "Choose the class",
+          "description": "Imported students are enrolled in this class, and their assessments are tied to the selected school."
+        },
+        "monthField": {
+          "title": "Pick the reading month",
+          "description": "This month decides where the visible reading-level column will be recorded. Switch months to fill additional columns."
+        },
+        "pasteHelp": {
+          "title": "Paste from a spreadsheet",
+          "description": "Copy rows from Excel or Sheets. Headers like matrícula, name, FEV, MAR, or 02/2026 are recognized automatically."
+        },
+        "grid": {
+          "title": "Fill student rows",
+          "description": "Enter matrícula and name for each student. The draft is saved on this device while you work."
+        },
+        "levelPicker": {
+          "title": "Select reading levels",
+          "description": "Use the compact level buttons to mark each student's reading level for the active month."
+        },
+        "summary": {
+          "title": "Review what will be added",
+          "description": "This summary shows filled cells and highlights unresolved values before you import."
+        },
+        "actions": {
+          "title": "Import or close",
+          "description": "Import filled cells when the grid is ready, or close the modal to keep the draft for later."
+        }
+      }
+    },
     "invite-teachers": {
       "title": "Invite Teachers",
       "summary": "Create invite links for teachers.",

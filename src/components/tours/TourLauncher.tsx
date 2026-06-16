@@ -11,6 +11,7 @@ import {
   BookOpenCheck,
   ChevronRight,
   ClipboardCheck,
+  FileSpreadsheet,
   HelpCircle,
   MessageCircle,
   Sparkles,
@@ -108,6 +109,7 @@ const SECTION_ICONS: Record<ProductTourSection['id'], LucideIcon> = {
 const GUIDE_ICONS: Record<ProductTourId, LucideIcon> = {
   'dashboard-overview': BarChart3,
   'student-assessment': ClipboardCheck,
+  'student-import': FileSpreadsheet,
   'invite-teachers': UsersRound,
   'parent-report-sharing': MessageCircle,
   'student-profile': UserRound,
@@ -720,6 +722,28 @@ function buildTourSteps(
       { anchor: 'assessment-date-field', key: 'dateField', side: 'right', align: 'start' },
       { anchor: 'assessment-actions', key: 'actions', side: 'top', align: 'end' },
     ],
+    'student-import': [
+      {
+        anchor: 'students-import-button',
+        key: 'openButton',
+        side: 'left',
+        align: 'start',
+        beforeNext: async ({ driverObj, moveToNextVisibleStep, markOpenedModal }) => {
+          clickTourAnchor('students-import-button')
+          await waitForRequiredTourAnchor('student-import-modal')
+          markOpenedModal('student-import-close')
+          driverObj.refresh()
+          await moveToNextVisibleStep()
+        },
+      },
+      { anchor: 'student-import-class-field', key: 'classField', side: 'bottom', align: 'start' },
+      { anchor: 'student-import-month-field', key: 'monthField', side: 'bottom', align: 'start' },
+      { anchor: 'student-import-paste-help', key: 'pasteHelp', side: 'bottom', align: 'start' },
+      { anchor: 'student-import-grid', key: 'grid', side: 'top', align: 'start' },
+      { anchor: 'student-import-level-picker', key: 'levelPicker', side: 'left', align: 'start' },
+      { anchor: 'student-import-summary', key: 'summary', side: 'top', align: 'start' },
+      { anchor: 'student-import-actions', key: 'actions', side: 'top', align: 'end' },
+    ],
     'invite-teachers': [
       { anchor: 'teachers-invite-card', key: 'inviteCard', side: 'bottom', align: 'start' },
       {
@@ -979,7 +1003,7 @@ function hasVisibleSystemModal(): boolean {
 }
 
 function closeTourOpenedModal(closeAnchor: string | null): void {
-  const fallbackAnchors = ['assessment-cancel', 'teacher-invite-cancel']
+  const fallbackAnchors = ['assessment-cancel', 'teacher-invite-cancel', 'student-import-close']
   const closeAnchors = closeAnchor ? [closeAnchor, ...fallbackAnchors.filter((anchor) => anchor !== closeAnchor)] : fallbackAnchors
   window.setTimeout(() => {
     for (const anchor of closeAnchors) {

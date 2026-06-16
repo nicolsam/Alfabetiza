@@ -86,6 +86,7 @@ describe('product tours', () => {
       'dashboard-overview',
       'student-profile',
       'student-assessment',
+      'student-import',
       'monthly-follow-up',
       'parent-report-sharing',
       'invite-teachers',
@@ -95,6 +96,7 @@ describe('product tours', () => {
       'dashboard-overview',
       'student-profile',
       'student-assessment',
+      'student-import',
       'monthly-follow-up',
       'parent-report-sharing',
       'invite-teachers',
@@ -230,7 +232,7 @@ describe('product tours', () => {
       'dashboard-overview',
       'student-profile',
     ])
-    expect(sections[2].tours.map((tour) => tour.id)).toEqual(['monthly-follow-up'])
+    expect(sections[2].tours.map((tour) => tour.id)).toEqual(['student-import', 'monthly-follow-up'])
     expect(sections[3].tours.map((tour) => tour.id)).toEqual([
       'parent-report-sharing',
       'invite-teachers',
@@ -262,7 +264,7 @@ describe('product tours', () => {
 
     expect(getGuidedHelpCategories(getAvailableTours(coordinator))).toEqual([
       { id: 'start-here', count: 2 },
-      { id: 'daily-workflows', count: 2 },
+      { id: 'daily-workflows', count: 3 },
       { id: 'sharing-and-team', count: 2 },
     ])
   })
@@ -272,6 +274,7 @@ describe('product tours', () => {
 
     expect(getGuidedHelpToursForCategory(availableTours, 'daily-workflows').map((tour) => tour.id)).toEqual([
       'student-assessment',
+      'student-import',
       'monthly-follow-up',
     ])
     expect(getGuidedHelpCategoryGuideCount(availableTours, 'sharing-and-team')).toBe(2)

@@ -3,6 +3,7 @@ import { Page, expect } from '@playwright/test';
 const PRODUCT_TOUR_IDS = [
   'dashboard-overview',
   'student-assessment',
+  'student-import',
   'invite-teachers',
   'parent-report-sharing',
   'student-profile',

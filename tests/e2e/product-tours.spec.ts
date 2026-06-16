@@ -41,7 +41,7 @@ test.describe('Product tours', () => {
     await page.goto('/dashboard')
 
     await page.getByRole('button', { name: /Guided help/i }).click()
-    await expect(page.locator('[data-tour="tour-launcher"]').getByText('6')).toBeVisible()
+    await expect(page.locator('[data-tour="tour-launcher"]').getByText('7')).toBeVisible()
     await expect(page.getByText('What would you like to learn?')).toBeVisible()
     await expectGuidedHelpMenuAboveMain(page)
     await expect(page.getByText('Suggested now')).toBeVisible()
@@ -63,7 +63,7 @@ test.describe('Product tours', () => {
     await expect(page.locator('.driver-popover')).toBeHidden()
 
     await page.getByRole('button', { name: /Guided help/i }).click()
-    await expect(page.locator('[data-tour="tour-launcher"]').getByText('5')).toBeVisible()
+    await expect(page.locator('[data-tour="tour-launcher"]').getByText('6')).toBeVisible()
     await page.getByRole('button', { name: /Sharing and team/ }).click()
     await expect(page.getByRole('button', { name: /Back/ })).toBeVisible()
     await expect(page.getByText('Parent report sharing')).toBeVisible()
@@ -152,7 +152,9 @@ test.describe('Product tours', () => {
     await page.goto('/dashboard/students')
     await page.getByRole('button', { name: /Guided help/i }).click()
     await page.getByRole('button', { name: /Daily workflows/ }).click()
+    const menu = page.locator('[data-tour="guided-help-menu"]')
     await expect(page.getByText('Student assessment flow')).toBeVisible()
+    await expect(menu.getByText('Import students')).toBeVisible()
     await expect(page.getByText('Monthly follow-up workflow')).toBeVisible()
     await expect(page.getByText('Dashboard overview')).toBeHidden()
     await page.getByText('Student assessment flow').click()
@@ -168,6 +170,25 @@ test.describe('Product tours', () => {
     await page.locator('.driver-popover-close-btn').click()
     await expect(page.locator('[data-tour="assessment-modal"]')).toBeHidden()
     expect(updateRequests).toEqual([])
+  })
+
+  test('starts the student import guide without importing data', async ({ page }) => {
+    await loginByApi(page, 'test-admin@example.com')
+    await page.goto('/dashboard/students')
+    await page.getByRole('button', { name: /Guided help/i }).click()
+    await page.getByRole('button', { name: /Daily workflows/ }).click()
+    await page.locator('[data-tour="guided-help-menu"]').getByText('Import students').click()
+
+    await expect(page.locator('.driver-popover')).toBeVisible()
+    await expect(page.getByText('Open the import tool')).toBeVisible()
+
+    await page.locator('.driver-popover-next-btn').click()
+
+    await expect(page.locator('[data-tour="student-import-modal"]')).toBeVisible()
+    await expect(page.locator('.driver-popover-title')).toHaveText('Choose the class')
+
+    await page.locator('.driver-popover-close-btn').click()
+    await expect(page.locator('[data-tour="student-import-modal"]')).toBeHidden()
   })
 
   test('opens the student profile tour with an example student when no students exist', async ({ page }) => {

@@ -16,6 +16,7 @@ export const GUIDED_HELP_ATTENTION_STORAGE_KEY = 'alfabetiza:guided-help:attenti
 export const PRODUCT_TOUR_IDS = [
   'dashboard-overview',
   'student-assessment',
+  'student-import',
   'invite-teachers',
   'parent-report-sharing',
   'student-profile',
@@ -93,6 +94,15 @@ export const PRODUCT_TOURS: ProductTour[] = [
     supportsDemoData: true,
     category: 'daily-workflows',
     order: 10,
+    requires: 'manage-students',
+  },
+  {
+    id: 'student-import',
+    version: 1,
+    route: '/dashboard/students',
+    requiredAnchor: 'students-import-button',
+    category: 'daily-workflows',
+    order: 15,
     requires: 'manage-students',
   },
   {

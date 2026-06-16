@@ -517,6 +517,44 @@
         }
       }
     },
+    "student-import": {
+      "title": "Importar alunos",
+      "summary": "Adicione muitos alunos e níveis de leitura em uma só grade.",
+      "steps": {
+        "openButton": {
+          "title": "Abra a importação",
+          "description": "Comece aqui quando precisar adicionar vários alunos ou avaliações de leitura de uma vez."
+        },
+        "classField": {
+          "title": "Escolha a turma",
+          "description": "Os alunos importados serão matriculados nesta turma, e as avaliações ficam vinculadas à escola selecionada."
+        },
+        "monthField": {
+          "title": "Escolha o mês da leitura",
+          "description": "Este mês define onde a coluna visível de nível de leitura será registrada. Troque o mês para preencher outras colunas."
+        },
+        "pasteHelp": {
+          "title": "Cole de uma planilha",
+          "description": "Copie linhas do Excel ou Sheets. Cabeçalhos como matrícula, nome, FEV, MAR ou 02/2026 são reconhecidos automaticamente."
+        },
+        "grid": {
+          "title": "Preencha as linhas",
+          "description": "Informe matrícula e nome de cada aluno. O rascunho fica salvo neste dispositivo enquanto você trabalha."
+        },
+        "levelPicker": {
+          "title": "Selecione os níveis",
+          "description": "Use os botões compactos para marcar o nível de leitura de cada aluno no mês ativo."
+        },
+        "summary": {
+          "title": "Revise o que será adicionado",
+          "description": "Este resumo mostra células preenchidas e destaca valores pendentes antes da importação."
+        },
+        "actions": {
+          "title": "Importe ou feche",
+          "description": "Importe as células preenchidas quando a grade estiver pronta, ou feche o modal para manter o rascunho para depois."
+        }
+      }
+    },
     "invite-teachers": {
       "title": "Convidar professores",
       "summary": "Crie links de convite para professores.",

@@ -482,7 +482,7 @@ export default function StudentsPage() {
         <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
         {canManageStudents && (
           <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowImportModal(true)} data-testid="student-import-open">
+            <Button variant="outline" onClick={() => setShowImportModal(true)} data-testid="student-import-open" data-tour="students-import-button">
               <FileSpreadsheet className="size-4" />
               {t('importStudents')}
             </Button>

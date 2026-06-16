@@ -266,7 +266,7 @@ export default function StudentImportModal({
 
   return (
     <div className={`!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${expanded ? 'p-1 sm:p-2' : 'p-4'}`} data-app-modal="true">
-      <div className={`max-h-[96vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${expanded ? 'max-w-none p-3 sm:p-4' : 'max-w-7xl p-6'}`} data-testid="student-import-modal-panel">
+      <div className={`max-h-[96vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${expanded ? 'max-w-none p-3 sm:p-4' : 'max-w-7xl p-6'}`} data-testid="student-import-modal-panel" data-tour="student-import-modal">
         <Button
           type="button"
           variant="outline"
@@ -275,6 +275,7 @@ export default function StudentImportModal({
           aria-label={tCommon('cancel')}
           className="sticky top-0 z-30 -mb-10 ml-auto flex bg-white shadow-sm"
           data-testid="student-import-close"
+          data-tour="student-import-close"
         >
           <X className="size-4" />
         </Button>
@@ -301,7 +302,7 @@ export default function StudentImportModal({
         {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-700">{error}</div>}
 
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="space-y-1">
+          <div className="space-y-1" data-tour="student-import-class-field">
             <Label>{tClasses('selectClass')}</Label>
             <Select value={selectedClassId} onValueChange={handleClassChange}>
               <SelectTrigger className="w-full" data-testid="student-import-class">
@@ -322,19 +323,19 @@ export default function StudentImportModal({
           </div>
         </div>
 
-        <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+        <div className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700" data-tour="student-import-paste-help">
           <p className="font-medium text-gray-900">{t('importGridPasteTitle')}</p>
           <p className="mt-1">{t('importGridPasteDescription')}</p>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid gap-3 sm:grid-cols-4" data-tour="student-import-status-summary">
           <SummaryPill label={t('importFilledRows')} value={filledRows} tone="neutral" />
           <SummaryPill label={t('importFilledCells')} value={filledCells} tone="success" />
           <SummaryPill label={t('importCreatedStudents')} value={result?.summary.createdStudents || 0} tone="success" />
           <SummaryPill label={t('importIssueRows')} value={(result?.summary.invalidRows || 0) + (result?.summary.incompleteRows || 0)} tone="warning" />
         </div>
 
-        <div className="mt-5 max-h-[48vh] overflow-auto rounded-md border border-gray-200">
+        <div className="mt-5 max-h-[48vh] overflow-auto rounded-md border border-gray-200" data-tour="student-import-grid">
           {rows.length === 0 ? (
             <div className="flex min-h-32 items-center justify-center p-6 text-center text-sm text-gray-500">
               {t('importEmptyRows')}
@@ -351,7 +352,7 @@ export default function StudentImportModal({
               <tr>
                 <th className="p-3 text-left text-gray-700">{t('studentNumber')}</th>
                 <th className="p-3 text-left text-gray-700">{t('name')}</th>
-                <th className="p-2 text-left text-gray-700" data-testid="student-import-active-month-header">
+                <th className="p-2 text-left text-gray-700" data-testid="student-import-active-month-header" data-tour="student-import-month-field">
                   <Select value={activeMonth} onValueChange={handleActiveMonthChange} disabled={!selectedClass}>
                     <SelectTrigger className="w-full border-gray-300 bg-white" data-testid="student-import-month">
                       <SelectValue placeholder={t('readingMonth')} />
@@ -445,8 +446,8 @@ export default function StudentImportModal({
           </div>
         )}
 
-        <div className="mt-6 flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="mt-6 flex flex-wrap justify-end gap-2" data-tour="student-import-actions">
+          <Button type="button" variant="outline" onClick={onCancel} data-tour="student-import-cancel">
             {tCommon('cancel')}
           </Button>
           <Button type="button" onClick={commitImport} disabled={!canImport} data-testid="student-import-confirm">
@@ -481,7 +482,7 @@ function ReadingLevelCell({
   const selectedLevelCode = selectedLevel?.code || ''
 
   return (
-    <div data-testid={`student-import-level-cell-${rowIndex}`} onFocus={onFocus} onPaste={onPaste}>
+    <div data-testid={`student-import-level-cell-${rowIndex}`} data-tour={rowIndex === 0 ? 'student-import-level-picker' : undefined} onFocus={onFocus} onPaste={onPaste}>
       <div className="hidden flex-wrap gap-1 md:flex">
         {levels.map((level) => {
           const selected = selectedLevelCode === level.code
@@ -555,7 +556,7 @@ function CompilationTable({
   onEdit: (rowIndex: number, month: string) => void
 }) {
   return (
-    <section className="mt-5">
+    <section className="mt-5" data-tour="student-import-summary">
       <h3 className="text-sm font-semibold text-gray-900">{labels.title}</h3>
       <div className="mt-2 overflow-auto rounded-md border border-gray-200">
         {rows.length === 0 || months.length === 0 ? (
