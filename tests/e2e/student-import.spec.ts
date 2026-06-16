@@ -119,6 +119,26 @@ test.describe('student import grid', () => {
     await expect(deleteButtons).toHaveCount(1)
   })
 
+  test('keeps a close button fixed inside the import modal', async ({ page }) => {
+    await loginByApi(page, ADMIN_EMAIL, 'playwright123', SCHOOL_ID)
+    await page.goto('/dashboard/students')
+
+    await page.getByTestId('student-import-open').click()
+
+    const panel = page.getByTestId('student-import-modal-panel')
+    const closeButton = page.getByTestId('student-import-close')
+
+    await expect(closeButton).toBeVisible()
+    await expect(closeButton).toHaveCSS('position', 'sticky')
+    await panel.evaluate((element) => {
+      element.scrollTop = element.scrollHeight
+    })
+    await expect(closeButton).toBeVisible()
+
+    await closeButton.click()
+    await expect(page.locator('[data-app-modal="true"]')).toHaveCount(0)
+  })
+
   test('blocks duplicate matrícula values before import', async ({ page }) => {
     await loginByApi(page, ADMIN_EMAIL, 'playwright123', SCHOOL_ID)
     await page.goto('/dashboard/students')

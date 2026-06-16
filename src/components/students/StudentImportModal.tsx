@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ClipboardEvent } from 'react'
-import { FileSpreadsheet, Maximize2, Minimize2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { FileSpreadsheet, Maximize2, Minimize2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   type StudentImportCommitResult,
@@ -266,8 +266,20 @@ export default function StudentImportModal({
 
   return (
     <div className={`!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${expanded ? 'p-1 sm:p-2' : 'p-4'}`} data-app-modal="true">
-      <div className={`max-h-[96vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${expanded ? 'max-w-none p-3 sm:p-4' : 'max-w-7xl p-6'}`}>
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+      <div className={`max-h-[96vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${expanded ? 'max-w-none p-3 sm:p-4' : 'max-w-7xl p-6'}`} data-testid="student-import-modal-panel">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={onCancel}
+          aria-label={tCommon('cancel')}
+          className="sticky top-0 z-30 -mb-10 ml-auto flex bg-white shadow-sm"
+          data-testid="student-import-close"
+        >
+          <X className="size-4" />
+        </Button>
+
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pr-12">
           <div>
             <h2 className="text-xl font-bold text-gray-800">{t('importStudents')}</h2>
             <p className="mt-1 text-sm text-gray-500">{t('importGridDescription')}</p>
