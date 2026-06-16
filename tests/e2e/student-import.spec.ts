@@ -154,6 +154,7 @@ test.describe('student import grid', () => {
     await page.getByTestId('student-import-matricula-0').fill('PT-IMPORT-001')
     await page.getByTestId('student-import-name-0').fill('Aluno em Português')
     await expect(page.getByTestId('student-import-level-0-RW')).toHaveText('LP')
+    await expect(page.getByTestId('student-import-level-0-RW')).toHaveAttribute('title', 'Lê Palavras')
     await page.getByTestId('student-import-level-0-RW').click()
 
     const modal = page.locator('[data-app-modal="true"]')

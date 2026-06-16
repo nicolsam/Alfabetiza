@@ -116,7 +116,6 @@ export default function StudentImportModal({
   const selectedClass = classes.find((classRecord) => classRecord.id === selectedClassId)
   const availableMonths = selectedClass ? getAvailableMonthOptions(selectedClass.academicYear) : []
   const activeMonth = focusedMonth || months[0] || initialDefaultMonth
-  const activeMonthLabel = formatMonthLabel(activeMonth, locale)
   const importMonths = useMemo(() => getFilledMonthKeys(rows, months), [rows, months])
   const compilationRows = useMemo(
     () => buildCompilationRows(rows, importMonths, levels),
@@ -384,7 +383,6 @@ export default function StudentImportModal({
                       levels={levels}
                       value={row.levelsByMonth[activeMonth] || ''}
                       rowIndex={rowIndex}
-                      activeMonthLabel={activeMonthLabel}
                       getLevelLabel={getLevelLabel}
                       getLevelShortLabel={getLevelShortLabel}
                       onFocus={() => setFocusedMonth(activeMonth)}
@@ -452,7 +450,6 @@ function ReadingLevelCell({
   levels,
   value,
   rowIndex,
-  activeMonthLabel,
   getLevelLabel,
   getLevelShortLabel,
   onFocus,
@@ -462,7 +459,6 @@ function ReadingLevelCell({
   levels: ReadingLevel[]
   value: string
   rowIndex: number
-  activeMonthLabel: string
   getLevelLabel: (level: ReadingLevel) => string
   getLevelShortLabel: (level: ReadingLevel) => string
   onFocus: () => void
@@ -481,7 +477,7 @@ function ReadingLevelCell({
             <button
               key={level.id}
               type="button"
-              title={`${activeMonthLabel}: ${getLevelLabel(level)}`}
+              title={getLevelLabel(level)}
               data-testid={`student-import-level-${rowIndex}-${level.code}`}
               onClick={() => onChange(selected ? '' : level.code)}
               className={`h-8 rounded border px-2 text-xs font-medium transition ${selected ? 'ring-2 ring-offset-1' : 'hover:opacity-80'}`}
