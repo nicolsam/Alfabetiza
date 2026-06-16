@@ -1,27 +1,5 @@
 'use client'
 
-import { useMemo, useState, type ClipboardEvent } from 'react'
-import { FileSpreadsheet, Maximize2, Minimize2, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { useLocale, useTranslations } from 'next-intl'
-import {
-  type StudentImportCommitResult,
-  type StudentImportGridRow,
-  type StudentImportSummary,
-  buildStudentImportDraftKey,
-  compactImportedRows,
-  createBlankStudentImportRows,
-  ensureGridHasBlankRows,
-  hasStudentImportRowLevel,
-  hasStudentImportRowValue,
-  matchStudentImportLevel,
-  parseStudentImportClipboard,
-} from '@/lib/student-imports'
-import {
-  buildMonthKey,
-  getAvailableMonthOptions,
-  getMonthPartFromMonthKey,
-  getYearFromMonthKey,
-} from '@/lib/monthly-updates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,6 +10,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  buildMonthKey,
+  getAvailableMonthOptions,
+  getMonthPartFromMonthKey,
+  getYearFromMonthKey,
+} from '@/lib/monthly-updates'
+import {
+  buildStudentImportDraftKey,
+  compactImportedRows,
+  createBlankStudentImportRows,
+  ensureGridHasBlankRows,
+  hasStudentImportRowLevel,
+  hasStudentImportRowValue,
+  matchStudentImportLevel,
+  parseStudentImportClipboard,
+  type StudentImportCommitResult,
+  type StudentImportGridRow,
+  type StudentImportSummary,
+} from '@/lib/student-imports'
+import { FileSpreadsheet, Maximize2, Minimize2, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { useMemo, useState, type ClipboardEvent } from 'react'
 
 type ClassRecord = {
   id: string
