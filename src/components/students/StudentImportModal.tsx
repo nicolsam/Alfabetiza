@@ -96,6 +96,8 @@ export default function StudentImportModal({
   const tCommon = useTranslations('common')
   const tLevels = useTranslations('levels')
   const locale = useLocale()
+  const getLevelLabel = (level: ReadingLevel) => tLevels(level.code)
+  const getLevelShortLabel = (level: ReadingLevel) => tLevels(`short.${level.code}`)
 
   const initialClassId = classes[0]?.id || ''
   const initialClass = classes.find((classRecord) => classRecord.id === initialClassId)
@@ -383,7 +385,8 @@ export default function StudentImportModal({
                       value={row.levelsByMonth[activeMonth] || ''}
                       rowIndex={rowIndex}
                       activeMonthLabel={activeMonthLabel}
-                      getLevelLabel={(level) => tLevels(level.code)}
+                      getLevelLabel={getLevelLabel}
+                      getLevelShortLabel={getLevelShortLabel}
                       onFocus={() => setFocusedMonth(activeMonth)}
                       onPaste={(event) => handlePaste(event, rowIndex, activeMonth)}
                       onChange={(value) => updateRowLevel(rowIndex, activeMonth, value)}
@@ -411,7 +414,8 @@ export default function StudentImportModal({
           months={importMonths}
           locale={locale}
           emptyLabel={t('importCompilationEmpty')}
-          getLevelLabel={(level) => tLevels(level.code)}
+          getLevelLabel={getLevelLabel}
+          getLevelShortLabel={getLevelShortLabel}
           onEdit={editCompilationCell}
           labels={{
             title: t('importCompilationTitle'),
@@ -450,6 +454,7 @@ function ReadingLevelCell({
   rowIndex,
   activeMonthLabel,
   getLevelLabel,
+  getLevelShortLabel,
   onFocus,
   onPaste,
   onChange,
@@ -459,17 +464,19 @@ function ReadingLevelCell({
   rowIndex: number
   activeMonthLabel: string
   getLevelLabel: (level: ReadingLevel) => string
+  getLevelShortLabel: (level: ReadingLevel) => string
   onFocus: () => void
   onPaste: (event: ClipboardEvent) => void
   onChange: (value: string) => void
 }) {
   const selectedLevel = findReadingLevel(levels, value)
+  const selectedLevelCode = selectedLevel?.code || ''
 
   return (
     <div data-testid={`student-import-level-cell-${rowIndex}`} onFocus={onFocus} onPaste={onPaste}>
       <div className="hidden flex-wrap gap-1 md:flex">
         {levels.map((level) => {
-          const selected = value === level.code
+          const selected = selectedLevelCode === level.code
           return (
             <button
               key={level.id}
@@ -484,13 +491,13 @@ function ReadingLevelCell({
                 color: level.textColor || '#374151',
               }}
             >
-              {level.code}
+              {getLevelShortLabel(level)}
             </button>
           )
         })}
       </div>
       <div className="md:hidden">
-        <Select value={selectedLevel?.code || '__blank__'} onValueChange={(nextValue) => onChange(nextValue === '__blank__' ? '' : nextValue)}>
+        <Select value={selectedLevelCode || '__blank__'} onValueChange={(nextValue) => onChange(nextValue === '__blank__' ? '' : nextValue)}>
           <SelectTrigger
             className="w-full"
             style={{
@@ -505,7 +512,7 @@ function ReadingLevelCell({
             <SelectItem value="__blank__">-</SelectItem>
             {levels.map((level) => (
               <SelectItem key={level.id} value={level.code}>
-                {level.code} - {getLevelLabel(level)}
+                {getLevelShortLabel(level)} - {getLevelLabel(level)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -522,6 +529,7 @@ function CompilationTable({
   emptyLabel,
   labels,
   getLevelLabel,
+  getLevelShortLabel,
   onEdit,
 }: {
   rows: CompilationRow[]
@@ -535,6 +543,7 @@ function CompilationTable({
     edit: string
   }
   getLevelLabel: (level: ReadingLevel) => string
+  getLevelShortLabel: (level: ReadingLevel) => string
   onEdit: (rowIndex: number, month: string) => void
 }) {
   return (
@@ -574,7 +583,7 @@ function CompilationTable({
                   {months.map((month) => (
                     <td key={month} className="group min-w-0 p-2 align-middle">
                       <div className="flex min-h-9 min-w-0 items-center justify-between gap-2 rounded-md border border-transparent px-2 py-1 transition group-hover:border-blue-200 group-hover:bg-blue-50 group-focus-within:border-blue-300 group-focus-within:bg-blue-50">
-                        <CompilationLevelValue cell={row.levelsByMonth[month]} getLevelLabel={getLevelLabel} />
+                        <CompilationLevelValue cell={row.levelsByMonth[month]} getLevelLabel={getLevelLabel} getLevelShortLabel={getLevelShortLabel} />
                         <Button
                           type="button"
                           variant="ghost"
@@ -602,9 +611,11 @@ function CompilationTable({
 function CompilationLevelValue({
   cell,
   getLevelLabel,
+  getLevelShortLabel,
 }: {
   cell: CompilationLevelCell | undefined
   getLevelLabel: (level: ReadingLevel) => string
+  getLevelShortLabel: (level: ReadingLevel) => string
 }) {
   if (!cell) return <span className="min-w-0 flex-1 text-gray-400">-</span>
 
@@ -619,7 +630,7 @@ function CompilationLevelValue({
   return (
     <span
       className="min-w-0 flex-1 rounded border px-2 py-1 text-xs font-medium leading-snug"
-      title={`${cell.level.code} - ${getLevelLabel(cell.level)}`}
+      title={`${getLevelShortLabel(cell.level)} - ${getLevelLabel(cell.level)}`}
       style={{
         borderColor: cell.level.color || '#D1D5DB',
         backgroundColor: cell.level.backgroundColor || '#F3F4F6',
@@ -627,7 +638,7 @@ function CompilationLevelValue({
       }}
     >
       <span className="block min-w-0 truncate whitespace-nowrap">
-        {cell.level.code} - {getLevelLabel(cell.level)}
+        {getLevelShortLabel(cell.level)} - {getLevelLabel(cell.level)}
       </span>
     </span>
   )

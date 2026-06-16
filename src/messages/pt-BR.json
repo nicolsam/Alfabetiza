@@ -410,6 +410,15 @@
     "RS": "Lê Frases",
     "RTS": "Lê Texto Silabando",
     "RTF": "Lê Texto com Fluência",
+    "short": {
+      "DNI": "NI",
+      "LO": "AL",
+      "SO": "AS",
+      "RW": "LP",
+      "RS": "LF",
+      "RTS": "LTS",
+      "RTF": "LTF"
+    },
     "selectLevel": "Selecionar nível"
   },
   "tours": {

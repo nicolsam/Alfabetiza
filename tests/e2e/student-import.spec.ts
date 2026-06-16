@@ -142,6 +142,26 @@ test.describe('student import grid', () => {
     })).toBe(0)
   })
 
+  test('shows localized reading level labels in the Portuguese import modal', async ({ page }) => {
+    await page.context().addCookies([{ name: 'NEXT_LOCALE', value: 'pt-BR', domain: 'localhost', path: '/' }])
+    await loginByApi(page, ADMIN_EMAIL, 'playwright123', SCHOOL_ID)
+    await page.goto('/dashboard/students')
+
+    await page.getByTestId('student-import-open').click()
+    await page.getByTestId('student-import-class').click()
+    await page.getByRole('option', { name: /1º Ano I/ }).click()
+
+    await page.getByTestId('student-import-matricula-0').fill('PT-IMPORT-001')
+    await page.getByTestId('student-import-name-0').fill('Aluno em Português')
+    await expect(page.getByTestId('student-import-level-0-RW')).toHaveText('LP')
+    await page.getByTestId('student-import-level-0-RW').click()
+
+    const modal = page.locator('[data-app-modal="true"]')
+    await expect(modal.getByText('LP - Lê Palavras')).toHaveCount(2)
+    await expect(modal.getByText('RW')).toHaveCount(0)
+    await expect(modal.getByText('RW - Reads Words')).toHaveCount(0)
+  })
+
   test('pastes spreadsheet rows with month headers and restores drafts after reload', async ({ page, context, browserName }) => {
     test.skip(browserName !== 'chromium', 'Clipboard permission automation is only available for Chromium here.')
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://localhost:3000' })

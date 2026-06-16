@@ -408,6 +408,15 @@
     "RS": "Reads Sentences",
     "RTS": "Reads Text Syllabically",
     "RTF": "Reads Text Fluently",
+    "short": {
+      "DNI": "DNI",
+      "LO": "LO",
+      "SO": "SO",
+      "RW": "RW",
+      "RS": "RS",
+      "RTS": "RTS",
+      "RTF": "RTF"
+    },
     "selectLevel": "Select level"
   },
   "tours": {
