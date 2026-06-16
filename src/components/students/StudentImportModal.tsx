@@ -267,34 +267,38 @@ export default function StudentImportModal({
   return (
     <div className={`!mt-0 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${expanded ? 'p-1 sm:p-2' : 'p-4'}`} data-app-modal="true">
       <div className={`max-h-[96vh] w-full overflow-y-auto rounded-lg bg-white shadow-xl ${expanded ? 'max-w-none p-3 sm:p-4' : 'max-w-7xl p-6'}`} data-testid="student-import-modal-panel" data-tour="student-import-modal">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={onCancel}
-          aria-label={tCommon('cancel')}
-          className="sticky top-0 z-30 -mb-10 ml-auto flex bg-white shadow-sm"
-          data-testid="student-import-close"
-          data-tour="student-import-close"
-        >
-          <X className="size-4" />
-        </Button>
+        <div className="sticky top-0 z-30 -mb-10 ml-auto flex w-fit gap-2" data-testid="student-import-fixed-actions">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setExpanded((currentValue) => !currentValue)}
+            aria-label={expanded ? t('importCollapseModal') : t('importExpandModal')}
+            className="bg-white shadow-sm"
+            data-testid="student-import-expand"
+          >
+            {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onCancel}
+            aria-label={tCommon('cancel')}
+            className="bg-white shadow-sm"
+            data-testid="student-import-close"
+            data-tour="student-import-close"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
 
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pr-12">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 pr-24">
           <div>
             <h2 className="text-xl font-bold text-gray-800">{t('importStudents')}</h2>
             <p className="mt-1 text-sm text-gray-500">{t('importGridDescription')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setExpanded((currentValue) => !currentValue)}
-              aria-label={expanded ? t('importCollapseModal') : t('importExpandModal')}
-            >
-              {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-            </Button>
             <FileSpreadsheet className="size-8 text-blue-600" aria-hidden="true" />
           </div>
         </div>

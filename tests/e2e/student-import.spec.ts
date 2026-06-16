@@ -81,6 +81,8 @@ test.describe('student import grid', () => {
     await page.getByTestId('student-import-class').click()
     await page.getByRole('option', { name: /1º Ano I/ }).click()
 
+    await expect(page.getByTestId('student-import-matricula-0')).toBeVisible()
+    await expect(page.getByTestId('student-import-matricula-1')).toHaveCount(0)
     await page.getByTestId('student-import-matricula-0').fill(IMPORTED_STUDENT_NUMBER)
     await page.getByTestId('student-import-name-0').fill('E2E Imported Student')
     await page.getByTestId('student-import-level-0-RW').first().click()
@@ -119,20 +121,24 @@ test.describe('student import grid', () => {
     await expect(deleteButtons).toHaveCount(1)
   })
 
-  test('keeps a close button fixed inside the import modal', async ({ page }) => {
+  test('keeps expand and close controls fixed inside the import modal', async ({ page }) => {
     await loginByApi(page, ADMIN_EMAIL, 'playwright123', SCHOOL_ID)
     await page.goto('/dashboard/students')
 
     await page.getByTestId('student-import-open').click()
 
     const panel = page.getByTestId('student-import-modal-panel')
+    const fixedActions = page.getByTestId('student-import-fixed-actions')
+    const expandButton = page.getByTestId('student-import-expand')
     const closeButton = page.getByTestId('student-import-close')
 
+    await expect(fixedActions).toHaveCSS('position', 'sticky')
+    await expect(expandButton).toBeVisible()
     await expect(closeButton).toBeVisible()
-    await expect(closeButton).toHaveCSS('position', 'sticky')
     await panel.evaluate((element) => {
       element.scrollTop = element.scrollHeight
     })
+    await expect(expandButton).toBeVisible()
     await expect(closeButton).toBeVisible()
 
     await closeButton.click()
@@ -150,6 +156,7 @@ test.describe('student import grid', () => {
     await page.getByTestId('student-import-matricula-0').fill('DUP-IMPORT')
     await page.getByTestId('student-import-name-0').fill('Duplicate One')
     await page.getByTestId('student-import-level-0-RW').click()
+    await page.locator('[data-app-modal="true"]').getByRole('button', { name: 'Add student' }).click()
     await page.getByTestId('student-import-matricula-1').fill('dup-import')
     await page.getByTestId('student-import-name-1').fill('Duplicate Two')
     await page.getByTestId('student-import-level-1-RS').click()

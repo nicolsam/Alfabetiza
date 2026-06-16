@@ -24,6 +24,10 @@ describe('student imports', () => {
     expect(buildStudentImportDraftKey('user-1', 'class-1')).toBe('student-import:v2:user-1:class-1:READING')
   })
 
+  it('creates one blank row by default', () => {
+    expect(createBlankStudentImportRows()).toHaveLength(1)
+  })
+
   it('parses English and Portuguese month labels with the selected academic year', () => {
     expect(parseImportMonth('FEB', 2026, '01/2026', new Date(2026, 4, 26))).toMatchObject({
       ok: true,
@@ -182,6 +186,6 @@ describe('student imports', () => {
 
     expect(nextRows.some((row) => row.rowId === 'row-1')).toBe(false)
     expect(nextRows.some((row) => row.rowId === 'row-2')).toBe(true)
-    expect(nextRows.length).toBeGreaterThanOrEqual(10)
+    expect(nextRows.length).toBeGreaterThanOrEqual(1)
   })
 })

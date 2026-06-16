@@ -1,6 +1,6 @@
 import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 
-export const MIN_STUDENT_IMPORT_GRID_ROWS = 10
+export const MIN_STUDENT_IMPORT_GRID_ROWS = 1
 export const STUDENT_IMPORT_ROW_GROWTH_SIZE = 5
 export const STUDENT_IMPORT_ROW_GROWTH_BUFFER = 3
 export const MAX_STUDENT_IMPORT_ROWS = 500
