@@ -16,7 +16,15 @@
     "noSearchResults": "No results found.",
     "createSchool": "Create a School",
     "addSchool": "Add School",
-    "actions": "Actions"
+    "actions": "Actions",
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "showing": "Showing {from}-{to} of {total}",
+      "pageOf": "Page {page} of {totalPages}",
+      "previous": "Previous page",
+      "next": "Next page",
+      "empty": "No entries to show"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
