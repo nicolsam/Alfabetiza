@@ -6,6 +6,7 @@ const {
   mockFindUserSchools,
   mockFindUserSchool,
   mockFindStudents,
+  mockCountStudents,
   mockFindClass,
   mockFindStudent,
   mockCreateStudent,
@@ -17,6 +18,7 @@ const {
   mockFindUserSchools: vi.fn(),
   mockFindUserSchool: vi.fn(),
   mockFindStudents: vi.fn(),
+  mockCountStudents: vi.fn(),
   mockFindClass: vi.fn(),
   mockFindStudent: vi.fn(),
   mockCreateStudent: vi.fn(),
@@ -41,6 +43,7 @@ vi.mock('@/lib/db', () => ({
     },
     student: {
       findMany: mockFindStudents,
+      count: mockCountStudents,
       findUnique: mockFindStudent,
       create: mockCreateStudent,
     },
@@ -118,6 +121,43 @@ describe('API: /api/students', () => {
           }),
         }),
       }),
+    }))
+    expect(mockCountStudents).not.toHaveBeenCalled()
+  })
+
+  it('GET paginates and searches visible students when pagination params are present', async () => {
+    const students = [{ id: 'student-1', name: 'Ana Student', assessments: [] }]
+    mockCountStudents.mockResolvedValue(61)
+    mockFindStudents.mockResolvedValue(students)
+
+    const response = await GET(createRequest('http://localhost/api/students?page=2&pageSize=30&q=Ana'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.students).toHaveLength(1)
+    expect(data.pagination).toMatchObject({
+      page: 2,
+      pageSize: 30,
+      totalItems: 61,
+      totalPages: 3,
+      hasNextPage: true,
+      hasPreviousPage: true,
+    })
+    expect(mockCountStudents).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        AND: expect.arrayContaining([
+          expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ name: expect.objectContaining({ contains: 'Ana' }) }),
+              expect.objectContaining({ studentNumber: expect.objectContaining({ contains: 'Ana' }) }),
+            ]),
+          }),
+        ]),
+      }),
+    })
+    expect(mockFindStudents).toHaveBeenCalledWith(expect.objectContaining({
+      skip: 30,
+      take: 30,
     }))
   })
 

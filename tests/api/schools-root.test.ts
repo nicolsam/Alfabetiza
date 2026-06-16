@@ -4,6 +4,9 @@ const {
   mockVerifyToken,
   mockFindTeacher,
   mockFindUserSchools,
+  mockCountUserSchools,
+  mockFindSchools,
+  mockCountSchools,
   mockCreateUserSchool,
   mockCreateSchool,
   mockLogAction,
@@ -11,6 +14,9 @@ const {
   mockVerifyToken: vi.fn(),
   mockFindTeacher: vi.fn(),
   mockFindUserSchools: vi.fn(),
+  mockCountUserSchools: vi.fn(),
+  mockFindSchools: vi.fn(),
+  mockCountSchools: vi.fn(),
   mockCreateUserSchool: vi.fn(),
   mockCreateSchool: vi.fn(),
   mockLogAction: vi.fn(),
@@ -29,9 +35,10 @@ vi.mock('@/lib/db', () => ({
     user: { findUnique: mockFindTeacher },
     userSchool: {
       findMany: mockFindUserSchools,
+      count: mockCountUserSchools,
       create: mockCreateUserSchool,
     },
-    school: { create: mockCreateSchool },
+    school: { findMany: mockFindSchools, count: mockCountSchools, create: mockCreateSchool },
   },
 }))
 
@@ -74,6 +81,44 @@ describe('API: /api/schools', () => {
       where: { userId: 'teacher-1', school: { deletedAt: null } },
       include: { school: true },
     })
+    expect(mockCountUserSchools).not.toHaveBeenCalled()
+  })
+
+  it('GET paginates and searches assigned schools when pagination params are present', async () => {
+    const schools = [{ id: 'school-1', name: 'Central School' }]
+    mockCountUserSchools.mockResolvedValue(31)
+    mockFindUserSchools.mockResolvedValue(schools.map((school) => ({ school })))
+
+    const response = await GET(new Request('http://localhost/api/schools?page=2&pageSize=30&q=Central', {
+      headers: { authorization: 'Bearer valid-token' },
+    }))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.schools).toEqual(schools)
+    expect(data.pagination).toMatchObject({
+      page: 2,
+      pageSize: 30,
+      totalItems: 31,
+      totalPages: 2,
+    })
+    expect(mockCountUserSchools).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        school: expect.objectContaining({
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              OR: expect.arrayContaining([
+                expect.objectContaining({ name: expect.objectContaining({ contains: 'Central' }) }),
+              ]),
+            }),
+          ]),
+        }),
+      }),
+    })
+    expect(mockFindUserSchools).toHaveBeenCalledWith(expect.objectContaining({
+      skip: 30,
+      take: 30,
+    }))
   })
 
   it('GET rejects missing tokens', async () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import SchoolsSkeleton from '@/components/skeletons/SchoolsSkeleton'
@@ -18,13 +18,27 @@ import {
 import { Pencil, Search, Trash2 } from "lucide-react"
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { filterBySearchQuery } from '@/lib/search'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
+import { PaginationControls } from '@/components/ui/pagination-controls'
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginationMeta,
+  type PageSizeOption,
+} from '@/lib/pagination'
 
 interface School {
   id: string
   name: string
   address?: string
+}
+
+const DEFAULT_PAGINATION: PaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
 }
 
 export default function SchoolsPage() {
@@ -35,11 +49,37 @@ export default function SchoolsPage() {
   const [schools, setSchools] = useState<School[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+  const [pagination, setPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION)
   const [showModal, setShowModal] = useState(false)
   const [newSchool, setNewSchool] = useState({ name: '', address: '' })
   
   const [editingSchool, setEditingSchool] = useState<School | null>(null)
   const [deletingSchoolId, setDeletingSchoolId] = useState<string | null>(null)
+
+  const fetchSchools = useCallback(async (force = false) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    setLoading(true)
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+    })
+    if (searchQuery.trim()) params.set('q', searchQuery.trim())
+
+    const res = await cachedJson<{ schools?: School[]; pagination?: PaginationMeta }>(`/api/schools?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }, { force })
+    if (res.ok && res.data.schools) {
+      setSchools(res.data.schools)
+      const nextPagination = res.data.pagination || DEFAULT_PAGINATION
+      setPagination(nextPagination)
+      if (nextPagination.page !== page) setPage(nextPagination.page)
+    }
+    setLoading(false)
+  }, [page, pageSize, searchQuery])
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -48,17 +88,8 @@ export default function SchoolsPage() {
       return
     }
 
-    const fetchSchools = async () => {
-      const res = await cachedJson<{ schools?: School[] }>('/api/schools', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok && res.data.schools) {
-        setSchools(res.data.schools)
-      }
-      setLoading(false)
-    }
-    fetchSchools()
-  }, [router])
+    void fetchSchools()
+  }, [fetchSchools, router])
 
   const handleCreateSchool = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,9 +103,8 @@ export default function SchoolsPage() {
     })
 
     if (res.ok) {
-      const data = await res.json()
       clearClientGetCache('/api/schools')
-      setSchools([...schools, data.school])
+      await fetchSchools(true)
       setShowModal(false)
       setNewSchool({ name: '', address: '' })
     }
@@ -93,9 +123,8 @@ export default function SchoolsPage() {
     })
 
     if (res.ok) {
-      const data = await res.json()
       clearClientGetCache('/api/schools')
-      setSchools(schools.map(s => s.id === data.school.id ? data.school : s))
+      await fetchSchools(true)
       setEditingSchool(null)
     } else {
       toast.error(tErrors('failedUpdate'))
@@ -118,7 +147,7 @@ export default function SchoolsPage() {
     if (res.ok) {
       const deletedSchool = schools.find(s => s.id === schoolIdToDelete)
       clearClientGetCache('/api/schools')
-      setSchools(schools.filter(s => s.id !== schoolIdToDelete))
+      await fetchSchools(true)
       
       toast(tCommon('delete'), {
         action: {
@@ -130,7 +159,7 @@ export default function SchoolsPage() {
             })
             if (restoreRes.ok) {
               clearClientGetCache('/api/schools')
-              if (deletedSchool) setSchools(prev => [...prev, deletedSchool])
+              if (deletedSchool) await fetchSchools(true)
             }
           }
         },
@@ -144,11 +173,6 @@ export default function SchoolsPage() {
   if (loading) {
     return <SchoolsSkeleton />
   }
-
-  const filteredSchools = filterBySearchQuery(schools, searchQuery, (school) => [
-    school.name,
-    school.address,
-  ])
 
   return (
     <div>
@@ -171,7 +195,10 @@ export default function SchoolsPage() {
               data-testid="schools-search"
               aria-label={tCommon('searchPlaceholder')}
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value)
+                setPage(1)
+              }}
               className="pl-9"
             />
           </div>
@@ -181,14 +208,10 @@ export default function SchoolsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {schools.length === 0 ? (
           <div className="bg-white p-6 rounded-lg shadow text-center text-gray-700 col-span-full">
-            {t('noSchools')}
-          </div>
-        ) : filteredSchools.length === 0 ? (
-          <div className="bg-white p-6 rounded-lg shadow text-center text-gray-700 col-span-full">
-            {tCommon('noSearchResults')}
+            {searchQuery.trim() ? tCommon('noSearchResults') : t('noSchools')}
           </div>
         ) : (
-          filteredSchools.map((school) => (
+          schools.map((school) => (
             <div key={school.id} className="bg-white p-6 rounded-lg shadow relative group">
               <h3 className="text-lg font-semibold text-gray-800">{school.name}</h3>
               <p className="text-gray-600 text-sm">{school.address || t('noAddress')}</p>
@@ -213,6 +236,16 @@ export default function SchoolsPage() {
           ))
         )}
       </div>
+
+      <PaginationControls
+        pagination={pagination}
+        className="mt-4 rounded-lg shadow"
+        onPageChange={setPage}
+        onPageSizeChange={(nextPageSize) => {
+          setPageSize(nextPageSize)
+          setPage(1)
+        }}
+      />
 
       {showModal && (
         <div className="!mt-0 fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center" data-app-modal="true">

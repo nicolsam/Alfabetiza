@@ -4,7 +4,9 @@ const {
   mockVerifyToken,
   mockFindAuthUser,
   mockFindUsers,
+  mockCountUsers,
   mockFindInvites,
+  mockCountInvites,
   mockFindSchool,
   mockFindExistingInvite,
   mockCreateInvite,
@@ -15,7 +17,9 @@ const {
   mockVerifyToken: vi.fn(),
   mockFindAuthUser: vi.fn(),
   mockFindUsers: vi.fn(),
+  mockCountUsers: vi.fn(),
   mockFindInvites: vi.fn(),
+  mockCountInvites: vi.fn(),
   mockFindSchool: vi.fn(),
   mockFindExistingInvite: vi.fn(),
   mockCreateInvite: vi.fn(),
@@ -37,10 +41,12 @@ vi.mock('@/lib/db', () => ({
     user: {
       findUnique: mockFindAuthUser,
       findMany: mockFindUsers,
+      count: mockCountUsers,
       update: mockUpdateUser,
     },
     userInvite: {
       findMany: mockFindInvites,
+      count: mockCountInvites,
       findFirst: mockFindExistingInvite,
       create: mockCreateInvite,
     },
@@ -150,6 +156,79 @@ describe('API: /api/users', () => {
           some: expect.objectContaining({ role: { in: ['TEACHER'] } }),
         }),
       }),
+    }))
+    expect(mockCountUsers).not.toHaveBeenCalled()
+    expect(mockCountInvites).not.toHaveBeenCalled()
+  })
+
+  it('paginates active users and pending invites independently', async () => {
+    mockGlobalAdminAuth()
+    mockCountUsers.mockResolvedValue(61)
+    mockCountInvites.mockResolvedValue(41)
+    mockFindUsers.mockResolvedValue([
+      {
+        id: 'teacher-1',
+        name: 'Teacher',
+        email: 'teacher@test.com',
+        isGlobalAdmin: false,
+        schools: [{
+          schoolId: 'school-1',
+          role: 'TEACHER',
+          school: { id: 'school-1', name: 'School 1' },
+        }],
+      },
+    ])
+    mockFindInvites.mockResolvedValue([
+      {
+        id: 'invite-1',
+        name: 'Invite',
+        email: 'invite@test.com',
+        role: 'TEACHER',
+        schoolId: 'school-1',
+        school: { id: 'school-1', name: 'School 1' },
+        token: 'invite-token',
+        expiresAt: new Date('2026-05-08T00:00:00.000Z'),
+        createdAt: new Date('2026-05-01T00:00:00.000Z'),
+      },
+    ])
+
+    const response = await GET(createRequest('/api/users?role=TEACHER&usersPage=2&usersPageSize=30&invitesPage=2&invitesPageSize=40&q=School'))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.usersPagination).toMatchObject({ page: 2, pageSize: 30, totalItems: 61, totalPages: 3 })
+    expect(data.invitesPagination).toMatchObject({ page: 2, pageSize: 40, totalItems: 41, totalPages: 2 })
+    expect(mockCountUsers).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        AND: expect.arrayContaining([
+          expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ name: expect.objectContaining({ contains: 'School' }) }),
+              expect.objectContaining({ email: expect.objectContaining({ contains: 'School' }) }),
+            ]),
+          }),
+        ]),
+      }),
+    })
+    expect(mockCountInvites).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        AND: expect.arrayContaining([
+          expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ name: expect.objectContaining({ contains: 'School' }) }),
+              expect.objectContaining({ email: expect.objectContaining({ contains: 'School' }) }),
+            ]),
+          }),
+        ]),
+      }),
+    })
+    expect(mockFindUsers).toHaveBeenCalledWith(expect.objectContaining({
+      skip: 30,
+      take: 30,
+    }))
+    expect(mockFindInvites).toHaveBeenCalledWith(expect.objectContaining({
+      skip: 40,
+      take: 40,
     }))
   })
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import ClassesSkeleton from '@/components/skeletons/ClassesSkeleton'
@@ -20,8 +20,13 @@ import Link from 'next/link'
 import { ACADEMIC_YEARS, getDefaultAcademicYear } from '@/lib/academic-years'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { filterBySearchQuery } from '@/lib/search'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
+import { PaginationControls } from '@/components/ui/pagination-controls'
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginationMeta,
+  type PageSizeOption,
+} from '@/lib/pagination'
 import {
   Select,
   SelectContent,
@@ -49,6 +54,14 @@ interface ClassRecord {
 const VALID_SHIFTS = ['Morning', 'Afternoon', 'Night']
 const VALID_GRADES = ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano', '1ª Série', '2ª Série', '3ª Série']
 const DEFAULT_ACADEMIC_YEAR = getDefaultAcademicYear()
+const DEFAULT_PAGINATION: PaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+}
 
 export default function ClassesPage() {
   const router = useRouter()
@@ -62,6 +75,9 @@ export default function ClassesPage() {
   const [schoolId, setSchoolId] = useState('')
   const [academicYearFilter, setAcademicYearFilter] = useState(String(DEFAULT_ACADEMIC_YEAR))
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+  const [pagination, setPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<StoredUser | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -73,6 +89,7 @@ export default function ClassesPage() {
   const handleSchoolFilterChange = (value: string) => {
     const nextSchoolId = value === '__all__' ? '' : value
     setSchoolId(nextSchoolId)
+    setPage(1)
     localStorage.setItem('selectedSchool', nextSchoolId)
     window.dispatchEvent(new Event('schoolChanged'))
   }
@@ -88,6 +105,7 @@ export default function ClassesPage() {
     const handleSchoolChange = () => {
       const storedSchool = localStorage.getItem('selectedSchool')
       setSchoolId(storedSchool || '')
+      setPage(1)
     }
 
     handleSchoolChange()
@@ -95,23 +113,26 @@ export default function ClassesPage() {
     return () => window.removeEventListener('schoolChanged', handleSchoolChange)
   }, [router])
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async (force = false) => {
       const token = localStorage.getItem('token')
       if (!token) return
 
+      setLoading(true)
       const params = new URLSearchParams()
       if (schoolId) params.set('schoolId', schoolId)
       if (academicYearFilter) params.set('academicYear', academicYearFilter)
+      if (searchQuery.trim()) params.set('q', searchQuery.trim())
+      params.set('page', String(page))
+      params.set('pageSize', String(pageSize))
       const url = `/api/classes${params.toString() ? `?${params.toString()}` : ''}`
 
       const [schoolsRes, classesRes] = await Promise.all([
         cachedJson<{ schools?: School[] }>('/api/schools', {
           headers: { Authorization: `Bearer ${token}` },
-        }),
-        cachedJson<{ classes?: ClassRecord[]; academicYears?: number[] }>(url, {
+        }, { force }),
+        cachedJson<{ classes?: ClassRecord[]; academicYears?: number[]; pagination?: PaginationMeta }>(url, {
           headers: { Authorization: `Bearer ${token}` },
-        }),
+        }, { force }),
       ])
 
       if (schoolsRes.ok && schoolsRes.data.schools) {
@@ -120,16 +141,22 @@ export default function ClassesPage() {
 
       if (classesRes.ok && classesRes.data.classes) {
         setClasses(classesRes.data.classes)
+        const nextPagination = classesRes.data.pagination || DEFAULT_PAGINATION
+        setPagination(nextPagination)
+        if (nextPagination.page !== page) setPage(nextPagination.page)
         const years = classesRes.data.academicYears?.length ? classesRes.data.academicYears : ACADEMIC_YEARS
         setAvailableAcademicYears(years)
         if (years.length > 0 && !years.includes(Number(academicYearFilter))) {
           setAcademicYearFilter(String(years[0]))
+          setPage(1)
         }
       }
       setLoading(false)
-    }
-    fetchData()
-  }, [schoolId, academicYearFilter])
+  }, [schoolId, academicYearFilter, searchQuery, page, pageSize])
+
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,9 +170,8 @@ export default function ClassesPage() {
     })
 
     if (res.ok) {
-      const data = await res.json()
       clearClientGetCache('/api/classes')
-      setClasses([...classes, data.class])
+      await fetchData(true)
       setShowModal(false)
       setNewClass({ grade: '', section: '', shift: '', schoolId: '', academicYear: Number(academicYearFilter) || DEFAULT_ACADEMIC_YEAR })
       toast.success(tCommon('save'))
@@ -173,9 +199,8 @@ export default function ClassesPage() {
     })
 
     if (res.ok) {
-      const data = await res.json()
       clearClientGetCache('/api/classes')
-      setClasses(classes.map(c => c.id === data.class.id ? data.class : c))
+      await fetchData(true)
       setEditingClass(null)
       toast.success(tCommon('save'))
     } else {
@@ -200,7 +225,7 @@ export default function ClassesPage() {
     if (res.ok) {
       const deletedClass = classes.find(c => c.id === classIdToDelete)
       clearClientGetCache('/api/classes')
-      setClasses(classes.filter(c => c.id !== classIdToDelete))
+      await fetchData(true)
       
       toast(tCommon('delete'), {
         action: {
@@ -212,7 +237,7 @@ export default function ClassesPage() {
             })
             if (restoreRes.ok) {
               clearClientGetCache('/api/classes')
-              if (deletedClass) setClasses(prev => [...prev, deletedClass])
+              if (deletedClass) await fetchData(true)
             }
           }
         },
@@ -228,13 +253,6 @@ export default function ClassesPage() {
   }
 
   const canManageClasses = canManageSchoolScopedRecords(user)
-  const filteredClasses = filterBySearchQuery(classes, searchQuery, (classRecord) => [
-    classRecord.grade,
-    classRecord.academicYear,
-    classRecord.section,
-    t(`shifts.${classRecord.shift}`),
-    classRecord.school?.name,
-  ])
 
   return (
     <div>
@@ -260,7 +278,10 @@ export default function ClassesPage() {
                 data-testid="classes-search"
                 aria-label={tCommon('searchPlaceholder')}
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value)
+                  setPage(1)
+                }}
                 className="pl-9"
               />
             </div>
@@ -285,7 +306,10 @@ export default function ClassesPage() {
             <Label className="text-gray-700">{t('academicYear')}</Label>
             <Select
               value={academicYearFilter}
-              onValueChange={setAcademicYearFilter}
+              onValueChange={(value) => {
+                setAcademicYearFilter(value)
+                setPage(1)
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={t('academicYear')} />
@@ -328,17 +352,11 @@ export default function ClassesPage() {
             {classes.length === 0 ? (
               <tr>
                 <td colSpan={canManageClasses ? 6 : 5} className="p-4 text-center text-gray-700">
-                  {t('noClasses')}
-                </td>
-              </tr>
-            ) : filteredClasses.length === 0 ? (
-              <tr>
-                <td colSpan={canManageClasses ? 6 : 5} className="p-4 text-center text-gray-700">
-                  {tCommon('noSearchResults')}
+                  {searchQuery.trim() ? tCommon('noSearchResults') : t('noClasses')}
                 </td>
               </tr>
             ) : (
-              filteredClasses.map((c) => (
+              classes.map((c) => (
                 <tr key={c.id} className="border-t hover:bg-gray-50 group">
                   <td className="p-4 text-gray-800">{c.grade}</td>
                   <td className="p-4 text-gray-800">{c.academicYear}</td>
@@ -370,6 +388,14 @@ export default function ClassesPage() {
             )}
           </tbody>
         </table>
+        <PaginationControls
+          pagination={pagination}
+          onPageChange={setPage}
+          onPageSizeChange={(nextPageSize) => {
+            setPageSize(nextPageSize)
+            setPage(1)
+          }}
+        />
       </div>
 
       {showModal && (

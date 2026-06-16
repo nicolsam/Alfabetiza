@@ -23,8 +23,13 @@ import { getStudentMetricCounts } from '@/lib/student-metrics'
 import { getSectionOptionsForGrade, resolveSectionFilter } from '@/lib/class-filters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ACADEMIC_YEARS, getDefaultAcademicYear } from '@/lib/academic-years'
-import { filterBySearchQuery } from '@/lib/search'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
+import { PaginationControls } from '@/components/ui/pagination-controls'
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginationMeta,
+  type PageSizeOption,
+} from '@/lib/pagination'
 import {
   buildMonthKey,
   getAvailableMonthOptions,
@@ -105,6 +110,14 @@ interface School {
 const VALID_SHIFTS = ['Morning', 'Afternoon', 'Night']
 const VALID_GRADES = ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano', '1ª Série', '2ª Série', '3ª Série']
 const DEFAULT_ACADEMIC_YEAR = getDefaultAcademicYear()
+const DEFAULT_PAGINATION: PaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+}
 
 export default function StudentsPage() {
   const router = useRouter()
@@ -140,6 +153,7 @@ export default function StudentsPage() {
 
   const handleMonthPartChange = (month: string) => {
     setSelectedMonth(buildMonthKey(month, selectedYear))
+    setPage(1)
   }
 
   const handleYearChange = (year: string) => {
@@ -150,11 +164,13 @@ export default function StudentsPage() {
 
     setSelectedYear(year)
     setSelectedMonth(buildMonthKey(nextMonth, year))
+    setPage(1)
   }
 
   const handleSchoolFilterChange = (value: string) => {
     const nextSchoolId = value === '__all__' ? '' : value
     setSchoolId(nextSchoolId)
+    setPage(1)
     localStorage.setItem('selectedSchool', nextSchoolId)
     window.dispatchEvent(new Event('schoolChanged'))
   }
@@ -168,6 +184,9 @@ export default function StudentsPage() {
   const [sectionFilter, setSectionFilter] = useState('')
   const [shiftFilter, setShiftFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+  const [pagination, setPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION)
   const sectionOptions = getSectionOptionsForGrade(classes, gradeFilter)
 
   const handleGradeFilterChange = (value: string) => {
@@ -176,10 +195,12 @@ export default function StudentsPage() {
 
     setGradeFilter(nextGrade)
     setSectionFilter((currentSection) => resolveSectionFilter(currentSection, nextSectionOptions))
+    setPage(1)
   }
 
   const handleSectionFilterChange = (value: string) => {
     setSectionFilter(value === '__all__' ? '' : value)
+    setPage(1)
   }
 
   const [updateLevel, setUpdateLevel] = useState({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })
@@ -198,6 +219,7 @@ export default function StudentsPage() {
     const handleSchoolChange = () => {
       const storedSchool = localStorage.getItem('selectedSchool')
       setSchoolId(storedSchool || '')
+      setPage(1)
     }
 
     handleSchoolChange()
@@ -219,8 +241,11 @@ export default function StudentsPage() {
       if (gradeFilter) params.append('grade', gradeFilter)
       if (sectionFilter) params.append('section', sectionFilter)
       if (shiftFilter) params.append('shift', shiftFilter)
+      if (searchQuery.trim()) params.append('q', searchQuery.trim())
       params.append('month', selectedMonth)
       params.append('academicYear', String(selectedAcademicYear))
+      params.append('page', String(page))
+      params.append('pageSize', String(pageSize))
       const studentsUrl = `/api/students${params.toString() ? `?${params.toString()}` : ''}`
 
       const [schoolsRes, classesRes, studentsRes, levelsRes] = await Promise.all([
@@ -230,7 +255,7 @@ export default function StudentsPage() {
         cachedJson<{ classes?: ClassRecord[]; academicYears?: number[] }>(classesUrl, {
           headers: { Authorization: `Bearer ${token}` },
         }, { force }),
-        cachedJson<{ students?: Student[] }>(studentsUrl, {
+        cachedJson<{ students?: Student[]; pagination?: PaginationMeta }>(studentsUrl, {
           headers: { Authorization: `Bearer ${token}` },
         }, { force }),
         cachedJson<ReadingLevel[]>('/api/levels', undefined, { force }),
@@ -261,13 +286,27 @@ export default function StudentsPage() {
 
       if (studentsRes.ok) {
         setStudents(studentsRes.data.students || [])
+        const nextPagination = studentsRes.data.pagination || DEFAULT_PAGINATION
+        setPagination(nextPagination)
+        if (nextPagination.page !== page) setPage(nextPagination.page)
       }
 
       if (levelsRes.ok) {
         setLevels(levelsRes.data)
       }
       setLoading(false)
-  }, [schoolId, gradeFilter, sectionFilter, shiftFilter, selectedMonth, selectedAcademicYear, selectedMonthPart])
+  }, [
+    schoolId,
+    gradeFilter,
+    sectionFilter,
+    shiftFilter,
+    searchQuery,
+    selectedMonth,
+    selectedAcademicYear,
+    selectedMonthPart,
+    page,
+    pageSize,
+  ])
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -288,17 +327,9 @@ export default function StudentsPage() {
     })
 
     if (res.ok) {
-      const data = await res.json()
       clearClientGetCache('/api/students')
       clearClientGetCache('/api/dashboard')
-      setStudents([
-        ...students,
-        {
-          ...data.student,
-          readingHistory: data.student.readingHistory || [],
-          monthlyUpdateStatus: 'missing',
-        },
-      ])
+      await fetchData(true)
       setShowModal(false)
       toast.success(tCommon('save'))
       return null
@@ -332,10 +363,9 @@ export default function StudentsPage() {
     })
 
     if (res.ok) {
-      const data = await res.json()
       clearClientGetCache('/api/students')
       clearClientGetCache('/api/dashboard')
-      setStudents(students.map(s => s.id === data.student.id ? { ...data.student, readingHistory: s.readingHistory } : s))
+      await fetchData(true)
       setEditingStudent(null)
       toast.success(tCommon('save'))
     } else {
@@ -360,7 +390,7 @@ export default function StudentsPage() {
       const deletedStudent = students.find(s => s.id === studentIdToDelete)
       clearClientGetCache('/api/students')
       clearClientGetCache('/api/dashboard')
-      setStudents(students.filter(s => s.id !== studentIdToDelete))
+      await fetchData(true)
 
       toast(tCommon('delete'), {
         action: {
@@ -373,7 +403,7 @@ export default function StudentsPage() {
             if (restoreRes.ok) {
               clearClientGetCache('/api/students')
               clearClientGetCache('/api/dashboard')
-              if (deletedStudent) setStudents(prev => [...prev, deletedStudent])
+              if (deletedStudent) await fetchData(true)
             }
           }
         },
@@ -453,13 +483,7 @@ export default function StudentsPage() {
   const visibleStudents = shouldShowDemoStudent ? [TOUR_DEMO_STUDENT] : students
   const studentMetrics = getStudentMetricCounts(visibleStudents, selectedMonth)
   const visibleLevels = levels.length > 0 ? levels : TOUR_DEMO_READING_LEVELS
-  const filteredStudents = filterBySearchQuery(visibleStudents, searchQuery, (student) => [
-    student.name,
-    student.studentNumber,
-    formatClassName(student.class),
-    getCurrentLevelLabel(student),
-    getMonthlyUpdateLabel(student),
-  ])
+  const displayedStudents = visibleStudents
 
   if (loading) {
     return <StudentsSkeleton />
@@ -503,7 +527,10 @@ export default function StudentsPage() {
                 data-testid="students-search"
                 aria-label={tCommon('searchPlaceholder')}
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value)
+                  setPage(1)
+                }}
                 className="pl-9"
               />
             </div>
@@ -554,7 +581,13 @@ export default function StudentsPage() {
           </div>
           <div className="space-y-1 md:w-44">
             <Label>{tClasses('shift')}</Label>
-            <Select value={shiftFilter} onValueChange={(value) => setShiftFilter(value === '__all__' ? '' : value)}>
+            <Select
+              value={shiftFilter}
+              onValueChange={(value) => {
+                setShiftFilter(value === '__all__' ? '' : value)
+                setPage(1)
+              }}
+            >
               <SelectTrigger className="w-full" data-testid="students-shift-filter">
                 <SelectValue placeholder={tClasses('all')} />
               </SelectTrigger>
@@ -671,20 +704,14 @@ export default function StudentsPage() {
             </tr>
           </thead>
           <tbody>
-            {visibleStudents.length === 0 ? (
+            {displayedStudents.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-4 text-center text-gray-700">
-                  {t('noStudents')}
-                </td>
-              </tr>
-            ) : filteredStudents.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-700">
-                  {tCommon('noSearchResults')}
+                  {searchQuery.trim() ? tCommon('noSearchResults') : t('noStudents')}
                 </td>
               </tr>
             ) : (
-              filteredStudents.map((student) => (
+              displayedStudents.map((student) => (
                 <tr key={student.id} className="border-t hover:bg-gray-50 group">
                   <td className="p-4">
                     <Link
@@ -766,6 +793,16 @@ export default function StudentsPage() {
             )}
           </tbody>
         </table>
+        {!shouldShowDemoStudent && (
+          <PaginationControls
+            pagination={pagination}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize)
+              setPage(1)
+            }}
+          />
+        )}
       </div>
 
       {showModal && (

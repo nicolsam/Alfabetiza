@@ -24,8 +24,8 @@ export async function login(page: Page, email: string, password = 'playwright123
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
   
-  const emailInput = page.getByPlaceholder('Email');
-  const passwordInput = page.getByPlaceholder('Password');
+  const emailInput = page.locator('#email');
+  const passwordInput = page.locator('#password');
   
   // fill() is generally better, we only use slower methods if it fails
   await emailInput.fill(email);

@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logAction } from '@/lib/audit'
 import { buildInviteUrl, createInviteToken, getInviteExpirationDate, hashInviteToken } from '@/lib/invites'
+import {
+  buildPaginationMeta,
+  hasNamedPaginationParams,
+  parseNamedPaginationParams,
+} from '@/lib/pagination'
+import { getAccentInsensitiveSearchTokens } from '@/lib/server-search'
 import {
   forbiddenResponse,
   getCoordinatorSchoolId,
@@ -60,8 +67,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const requestedSchoolId = searchParams.get('schoolId')
     const requestedRole = searchParams.get('role')
+    const query = searchParams.get('q')?.trim()
+    const searchTokens = getAccentInsensitiveSearchTokens(query)
     const roleFilter = getRoleFilter(requestedRole)
     if (!Array.isArray(roleFilter)) return roleFilter
+    const shouldPaginateUsers = hasNamedPaginationParams(searchParams, 'usersPage', 'usersPageSize')
+    const shouldPaginateInvites = hasNamedPaginationParams(searchParams, 'invitesPage', 'invitesPageSize')
+    const usersPaginationParams = parseNamedPaginationParams(searchParams, 'usersPage', 'usersPageSize')
+    const invitesPaginationParams = parseNamedPaginationParams(searchParams, 'invitesPage', 'invitesPageSize')
 
     const coordinatorSchoolId = getCoordinatorSchoolId(auth.user)
     const schoolId = auth.user.isGlobalAdmin ? requestedSchoolId : coordinatorSchoolId
@@ -71,24 +84,62 @@ export async function GET(request: Request) {
 
     if (!auth.user.isGlobalAdmin && !schoolId) return forbiddenResponse()
 
+    const assignmentWhere: Prisma.UserSchoolWhereInput = {
+      ...(schoolId ? { schoolId } : {}),
+      role: { in: manageableRoles },
+      school: { deletedAt: null },
+    }
+    const userWhere: Prisma.UserWhereInput = {
+      isGlobalAdmin: false,
+      schools: { some: assignmentWhere },
+      ...(searchTokens.length > 0 ? {
+        AND: searchTokens.map((terms) => ({
+          OR: [
+            ...terms.map((term) => ({ name: { contains: term, mode: 'insensitive' as const } })),
+            ...terms.map((term) => ({ email: { contains: term, mode: 'insensitive' as const } })),
+            ...terms.map((term) => ({
+              schools: {
+                some: {
+                  ...assignmentWhere,
+                  OR: [
+                    { role: { contains: term, mode: 'insensitive' as const } },
+                    { school: { name: { contains: term, mode: 'insensitive' as const }, deletedAt: null } },
+                  ],
+                },
+              },
+            })),
+          ],
+        })),
+      } : {}),
+    }
+    const inviteWhere: Prisma.UserInviteWhereInput = {
+      acceptedAt: null,
+      ...(schoolId ? { schoolId } : {}),
+      role: { in: manageableRoles },
+      school: { deletedAt: null },
+      ...(searchTokens.length > 0 ? {
+        AND: searchTokens.map((terms) => ({
+          OR: [
+            ...terms.map((term) => ({ name: { contains: term, mode: 'insensitive' as const } })),
+            ...terms.map((term) => ({ email: { contains: term, mode: 'insensitive' as const } })),
+            ...terms.map((term) => ({ role: { contains: term, mode: 'insensitive' as const } })),
+            ...terms.map((term) => ({
+              school: { name: { contains: term, mode: 'insensitive' as const }, deletedAt: null },
+            })),
+          ],
+        })),
+      } : {}),
+    }
+    const [usersTotalItems, invitesTotalItems] = await Promise.all([
+      shouldPaginateUsers ? prisma.user.count({ where: userWhere }) : Promise.resolve(undefined),
+      shouldPaginateInvites ? prisma.userInvite.count({ where: inviteWhere }) : Promise.resolve(undefined),
+    ])
     const users = await prisma.user.findMany({
-      where: {
-        isGlobalAdmin: false,
-        schools: {
-          some: {
-            ...(schoolId ? { schoolId } : {}),
-            role: { in: manageableRoles },
-            school: { deletedAt: null },
-          },
-        },
-      },
+      where: userWhere,
+      ...(shouldPaginateUsers ? { skip: usersPaginationParams.skip, take: usersPaginationParams.take } : {}),
       include: {
         schools: {
-          where: {
-            ...(schoolId ? { schoolId } : {}),
-            role: { in: manageableRoles },
-            school: { deletedAt: null },
-          },
+          where: assignmentWhere,
           include: { school: { select: { id: true, name: true } } },
         },
       },
@@ -96,12 +147,8 @@ export async function GET(request: Request) {
     })
 
     const invites = await prisma.userInvite.findMany({
-      where: {
-        acceptedAt: null,
-        ...(schoolId ? { schoolId } : {}),
-        role: { in: manageableRoles },
-        school: { deletedAt: null },
-      },
+      where: inviteWhere,
+      ...(shouldPaginateInvites ? { skip: invitesPaginationParams.skip, take: invitesPaginationParams.take } : {}),
       include: { school: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
     })
@@ -119,6 +166,20 @@ export async function GET(request: Request) {
         createdAt: invite.createdAt,
         inviteLink: invite.token ? buildInviteUrl(request, invite.token) : null,
       })),
+      ...(shouldPaginateUsers && typeof usersTotalItems === 'number' ? {
+        usersPagination: buildPaginationMeta({
+          page: usersPaginationParams.page,
+          pageSize: usersPaginationParams.pageSize,
+          totalItems: usersTotalItems,
+        }),
+      } : {}),
+      ...(shouldPaginateInvites && typeof invitesTotalItems === 'number' ? {
+        invitesPagination: buildPaginationMeta({
+          page: invitesPaginationParams.page,
+          pageSize: invitesPaginationParams.pageSize,
+          totalItems: invitesTotalItems,
+        }),
+      } : {}),
     })
   } catch (error) {
     console.error('Users GET error:', error)

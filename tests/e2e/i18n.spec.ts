@@ -10,8 +10,8 @@ test.describe('i18n Localization', () => {
     await ptButton.click();
 
     // Wait for the translation to apply (sidebar links)
-    await expect(page.getByRole('link', { name: 'Alunos' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Escolas' })).toBeVisible();
+    await expect(page.locator('nav').getByRole('link', { name: 'Alunos' })).toBeVisible();
+    await expect(page.locator('nav').getByRole('link', { name: 'Escolas' })).toBeVisible();
   });
 
   test('should translate sidebar navigation when switching language to English', async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe('i18n Localization', () => {
     await enButton.click();
 
     // Wait for the translation to apply (sidebar links)
-    await expect(page.getByRole('link', { name: 'Students' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Schools' })).toBeVisible();
+    await expect(page.locator('nav').getByRole('link', { name: 'Students' })).toBeVisible();
+    await expect(page.locator('nav').getByRole('link', { name: 'Schools' })).toBeVisible();
   });
 });

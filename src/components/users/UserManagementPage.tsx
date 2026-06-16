@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Copy, Pencil, Search, Trash2, UserPlus } from 'lucide-react'
@@ -30,7 +30,12 @@ import {
 import AdminTableSkeleton from '@/components/skeletons/AdminTableSkeleton'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
 import { getStoredUser, type StoredUser } from '@/lib/client-auth'
-import { filterBySearchQuery } from '@/lib/search'
+import { PaginationControls } from '@/components/ui/pagination-controls'
+import {
+  DEFAULT_PAGE_SIZE,
+  type PaginationMeta,
+  type PageSizeOption,
+} from '@/lib/pagination'
 
 type School = {
   id: string
@@ -82,6 +87,15 @@ type UserManagementPageProps = {
   canManage: (user: StoredUser | null) => boolean
 }
 
+const DEFAULT_PAGINATION: PaginationMeta = {
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+}
+
 export default function UserManagementPage({
   role,
   messages,
@@ -99,6 +113,12 @@ export default function UserManagementPage({
   const [loading, setLoading] = useState(true)
   const [schoolId, setSchoolId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [usersPage, setUsersPage] = useState(1)
+  const [usersPageSize, setUsersPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+  const [usersPagination, setUsersPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION)
+  const [invitesPage, setInvitesPage] = useState(1)
+  const [invitesPageSize, setInvitesPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+  const [invitesPagination, setInvitesPagination] = useState<PaginationMeta>(DEFAULT_PAGINATION)
   const [inviteLink, setInviteLink] = useState('')
   const [inviteStep, setInviteStep] = useState<InviteModalStep>('form')
   const [showInviteModal, setShowInviteModal] = useState(false)
@@ -119,18 +139,6 @@ export default function UserManagementPage({
   const activeUserRows: ActiveUserRow[] = users.flatMap((managedUser) => (
     managedUser.schools.map((school) => ({ managedUser, school }))
   ))
-  const filteredUserRows = filterBySearchQuery(activeUserRows, searchQuery, ({ managedUser, school }) => [
-    managedUser.name,
-    managedUser.email,
-    school.schoolName,
-    getRoleLabel(managedUser.gender, school.role),
-  ])
-  const filteredInvites = filterBySearchQuery(invites, searchQuery, (invite) => [
-    invite.name,
-    invite.email,
-    invite.schoolName,
-    t(`roles.${invite.role}`),
-  ])
 
   const getInviteErrorMessage = (error: string | undefined) => {
     const errorMap: Record<string, string> = {
@@ -181,39 +189,59 @@ export default function UserManagementPage({
     queueMicrotask(() => setUser(storedUser))
   }, [canAccess, router])
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async (force = false) => {
       const token = localStorage.getItem('token')
       if (!token || !user) return
 
       setLoading(true)
       const params = new URLSearchParams({ role })
       if (schoolId) params.set('schoolId', schoolId)
+      if (searchQuery.trim()) params.set('q', searchQuery.trim())
+      params.set('usersPage', String(usersPage))
+      params.set('usersPageSize', String(usersPageSize))
+      params.set('invitesPage', String(invitesPage))
+      params.set('invitesPageSize', String(invitesPageSize))
 
       const [schoolsRes, usersRes] = await Promise.all([
         cachedJson<{ schools?: School[] }>('/api/schools', {
           headers: { Authorization: `Bearer ${token}` },
-        }),
-        cachedJson<{ users?: ManagedUser[]; invites?: PendingInvite[] }>(`/api/users?${params.toString()}`, {
+        }, { force }),
+        cachedJson<{
+          users?: ManagedUser[]
+          invites?: PendingInvite[]
+          usersPagination?: PaginationMeta
+          invitesPagination?: PaginationMeta
+        }>(`/api/users?${params.toString()}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }),
+        }, { force }),
       ])
 
       if (schoolsRes.ok) {
         const fetchedSchools = schoolsRes.data.schools || []
         setSchools(fetchedSchools)
-        if (!schoolId && fetchedSchools.length === 1) setSchoolId(fetchedSchools[0].id)
+        if (!schoolId && fetchedSchools.length === 1) {
+          setSchoolId(fetchedSchools[0].id)
+          setUsersPage(1)
+          setInvitesPage(1)
+        }
       }
 
       if (usersRes.ok) {
         setUsers(usersRes.data.users || [])
         setInvites(usersRes.data.invites || [])
+        const nextUsersPagination = usersRes.data.usersPagination || DEFAULT_PAGINATION
+        const nextInvitesPagination = usersRes.data.invitesPagination || DEFAULT_PAGINATION
+        setUsersPagination(nextUsersPagination)
+        setInvitesPagination(nextInvitesPagination)
+        if (nextUsersPagination.page !== usersPage) setUsersPage(nextUsersPagination.page)
+        if (nextInvitesPagination.page !== invitesPage) setInvitesPage(nextInvitesPagination.page)
       }
       setLoading(false)
-    }
+  }, [role, user, schoolId, searchQuery, usersPage, usersPageSize, invitesPage, invitesPageSize])
 
-    fetchData()
-  }, [role, user, schoolId])
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
 
   const openInviteModal = () => {
     setInviteStep('form')
@@ -268,12 +296,7 @@ export default function UserManagementPage({
 
     if (data.user) {
       clearClientGetCache('/api/users')
-      setUsers((current) => (
-        current.some((currentUser) => currentUser.id === data.user.id)
-          ? current.map((currentUser) => currentUser.id === data.user.id ? data.user : currentUser)
-          : [data.user, ...current]
-      ))
-      setInvites((current) => current.filter((invite) => invite.email !== data.user.email))
+      await fetchData(true)
       closeInviteModal()
       toast.success(t('userAssigned'))
       return
@@ -282,7 +305,7 @@ export default function UserManagementPage({
     clearClientGetCache('/api/users')
     setInviteLink(data.inviteLink)
     setCreatedInvite(data.invite)
-    setInvites((current) => [data.invite, ...current])
+    await fetchData(true)
     setForm({ name: '', email: '' })
     setInviteStep('link')
     toast.success(t('inviteCreated'))
@@ -306,7 +329,7 @@ export default function UserManagementPage({
     }
 
     clearClientGetCache('/api/users')
-    setUsers((current) => current.filter((currentUser) => currentUser.id !== managedUser.id))
+    await fetchData(true)
     toast.success(t('unassigned'))
   }
 
@@ -328,7 +351,7 @@ export default function UserManagementPage({
     }
 
     clearClientGetCache('/api/users')
-    setInvites((current) => current.filter((invite) => invite.id !== id))
+    await fetchData(true)
     toast.success(t('inviteDeleted'))
   }
 
@@ -350,9 +373,7 @@ export default function UserManagementPage({
     }
 
     clearClientGetCache('/api/users')
-    setUsers((current) => current.map((currentUser) => (
-      currentUser.id === data.user.id ? data.user : currentUser
-    )))
+    await fetchData(true)
     closeEditModal()
     toast.success(t('updated'))
   }
@@ -405,7 +426,11 @@ export default function UserManagementPage({
                 data-testid={searchTestId}
                 aria-label={tCommon('searchPlaceholder')}
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value)
+                  setUsersPage(1)
+                  setInvitesPage(1)
+                }}
                 className="pl-9"
               />
             </div>
@@ -429,6 +454,8 @@ export default function UserManagementPage({
                     value={schoolId}
                     onValueChange={(value) => {
                       setSchoolId(value)
+                      setUsersPage(1)
+                      setInvitesPage(1)
                       setInviteFormErrors((current) => ({ ...current, schoolId: undefined }))
                     }}
                   >
@@ -590,13 +617,11 @@ export default function UserManagementPage({
               <tbody>
                 {activeUserRows.length === 0 ? (
                   <tr>
-                    <td colSpan={userTableColSpan} className="p-4 text-center text-gray-700">{t('empty')}</td>
+                    <td colSpan={userTableColSpan} className="p-4 text-center text-gray-700">
+                      {searchQuery.trim() ? tCommon('noSearchResults') : t('empty')}
+                    </td>
                   </tr>
-                ) : filteredUserRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={userTableColSpan} className="p-4 text-center text-gray-700">{tCommon('noSearchResults')}</td>
-                  </tr>
-                ) : filteredUserRows.map(({ managedUser, school }) => (
+                ) : activeUserRows.map(({ managedUser, school }) => (
                   <tr key={`${managedUser.id}-${school.schoolId}`} className="border-t">
                     <td className="p-4">{managedUser.name}</td>
                     <td className="p-4">{managedUser.email}</td>
@@ -629,6 +654,14 @@ export default function UserManagementPage({
               </tbody>
             </table>
           </div>
+          <PaginationControls
+            pagination={usersPagination}
+            onPageChange={setUsersPage}
+            onPageSizeChange={(nextPageSize) => {
+              setUsersPageSize(nextPageSize)
+              setUsersPage(1)
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -638,12 +671,12 @@ export default function UserManagementPage({
         </CardHeader>
         <CardContent>
           {invites.length === 0 ? (
-            <p className="text-sm text-gray-600">{t('noPendingInvites')}</p>
+            <p className="text-sm text-gray-600">
+              {searchQuery.trim() ? tCommon('noSearchResults') : t('noPendingInvites')}
+            </p>
           ) : (
             <div className="space-y-2">
-              {filteredInvites.length === 0 ? (
-                <p className="text-sm text-gray-600">{tCommon('noSearchResults')}</p>
-              ) : filteredInvites.map((invite) => (
+              {invites.map((invite) => (
                 <div key={invite.id} className="space-y-2 border-b py-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span>{invite.name} · {invite.email}</span>
@@ -688,6 +721,15 @@ export default function UserManagementPage({
               ))}
             </div>
           )}
+          <PaginationControls
+            pagination={invitesPagination}
+            className="mt-4 px-0"
+            onPageChange={setInvitesPage}
+            onPageSizeChange={(nextPageSize) => {
+              setInvitesPageSize(nextPageSize)
+              setInvitesPage(1)
+            }}
+          />
         </CardContent>
       </Card>
 
