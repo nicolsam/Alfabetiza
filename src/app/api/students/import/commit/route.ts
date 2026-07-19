@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { randomUUID } from 'node:crypto'
+import type { Prisma } from '@prisma/client'
 
 import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { logAction } from '@/lib/audit'
@@ -21,6 +23,17 @@ type ExistingStudentWithEnrollments = {
   schoolId: string
   enrollments: { id: string; classId: string }[]
 }
+
+type PersistedStudent = {
+  id: string
+  studentNumber: string
+  enrollments: { id: string; classId: string }[]
+}
+
+type ImportTransaction = Pick<
+  Prisma.TransactionClient,
+  'student' | 'studentEnrollment' | 'studentAssessment'
+>
 
 export async function POST(request: Request) {
   try {
@@ -89,66 +102,16 @@ export async function POST(request: Request) {
       existingStudents,
     })
 
-    const importedRows = await prisma.$transaction(async (transaction) => {
-      const existingByMatricula = new Map(
-        (existingStudents as ExistingStudentWithEnrollments[]).map((student) => [student.studentNumber, student])
-      )
-      const imported: StudentImportRowResult[] = []
-
-      for (const row of validated.rows) {
-        if (row.status !== 'imported') {
-          imported.push(row)
-          continue
-        }
-
-        const existingStudent = existingByMatricula.get(row.matricula)
-        const student = existingStudent || await transaction.student.create({
-          data: {
-            name: row.name,
-            studentNumber: row.matricula,
-            schoolId: classRecord.schoolId,
-            classId: classRecord.id,
-            enrollments: {
-              create: {
-                classId: classRecord.id,
-                startedAt: getAcademicYearStartDate(classRecord.academicYear),
-              },
-            },
-          },
-          include: {
-            enrollments: {
-              where: { classId: classRecord.id, deletedAt: null },
-              orderBy: { startedAt: 'desc' },
-            },
-          },
-        })
-
-        const enrollment = student.enrollments[0] || await transaction.studentEnrollment.create({
-          data: {
-            studentId: student.id,
-            classId: classRecord.id,
-            startedAt: getAcademicYearStartDate(classRecord.academicYear),
-          },
-        })
-
-        const importedCells = await createAssessmentsForCells({
-          cells: row.cells,
-          studentId: student.id,
-          enrollmentId: enrollment.id,
-          userId: auth.user.id,
-          transaction,
-        })
-
-        imported.push({
-          ...row,
-          studentId: student.id,
-          createdStudent: !existingStudent,
-          cells: importedCells,
-        })
-      }
-
-      return imported
-    })
+    const importedRows = await prisma.$transaction(
+      (transaction) => persistStudentImportRows({
+        rows: validated.rows,
+        classRecord,
+        existingStudents: existingStudents as ExistingStudentWithEnrollments[],
+        userId: auth.user.id,
+        transaction,
+      }),
+      { timeout: 20000 }
+    )
 
     const result = {
       summary: summarizeImportedRows(importedRows),
@@ -178,52 +141,191 @@ export async function POST(request: Request) {
   }
 }
 
-async function createAssessmentsForCells(input: {
-  cells: StudentImportCellResult[]
-  studentId: string
-  enrollmentId: string
+async function persistStudentImportRows(input: {
+  rows: StudentImportRowResult[]
+  classRecord: { id: string; schoolId: string; academicYear: number }
+  existingStudents: ExistingStudentWithEnrollments[]
   userId: string
-  transaction: {
-    studentAssessment: {
-      create: (args: {
-        data: {
-          studentId: string
-          enrollmentId: string
-          assessmentTypeId: string
-          assessmentLevelId: string
-          userId: string
-          recordedAt: Date
-        }
-      }) => Promise<{ id: string }>
-    }
+  transaction: ImportTransaction
+}): Promise<StudentImportRowResult[]> {
+  const existingByMatricula = new Map(input.existingStudents.map((student) => [student.studentNumber, student]))
+  const persistedByMatricula = buildPersistedStudentMap(input.rows, existingByMatricula)
+  const enrollmentIdByStudentId = buildEnrollmentMap(persistedByMatricula)
+  const enrollmentStartedAt = getAcademicYearStartDate(input.classRecord.academicYear)
+
+  const studentsToCreate = buildStudentsToCreate(input.rows, existingByMatricula, persistedByMatricula, input.classRecord)
+  if (studentsToCreate.length > 0) await input.transaction.student.createMany({ data: studentsToCreate })
+
+  const enrollmentsToCreate = buildEnrollmentsToCreate(
+    input.rows,
+    persistedByMatricula,
+    enrollmentIdByStudentId,
+    input.classRecord.id,
+    enrollmentStartedAt
+  )
+  if (enrollmentsToCreate.length > 0) await input.transaction.studentEnrollment.createMany({ data: enrollmentsToCreate })
+
+  const assessmentIdsByCell = new Map<string, string>()
+  const assessmentsToCreate = buildAssessmentsToCreate(
+    input.rows,
+    persistedByMatricula,
+    enrollmentIdByStudentId,
+    input.userId,
+    assessmentIdsByCell
+  )
+  if (assessmentsToCreate.length > 0) await input.transaction.studentAssessment.createMany({ data: assessmentsToCreate })
+
+  return input.rows.map((row) => addPersistedIdsToRow(row, persistedByMatricula, assessmentIdsByCell))
+}
+
+function buildPersistedStudentMap(
+  rows: StudentImportRowResult[],
+  existingByMatricula: Map<string, ExistingStudentWithEnrollments>
+): Map<string, PersistedStudent> {
+  const persistedByMatricula = new Map<string, PersistedStudent>()
+
+  for (const row of rows.filter(isImportedRow)) {
+    const existingStudent = existingByMatricula.get(row.matricula)
+    persistedByMatricula.set(row.matricula, existingStudent || {
+      id: randomUUID(),
+      studentNumber: row.matricula,
+      enrollments: [],
+    })
   }
-}): Promise<StudentImportCellResult[]> {
-  const importedCells: StudentImportCellResult[] = []
 
-  for (const cell of input.cells) {
-    if (cell.status !== 'imported' || !cell.readingLevelId || !cell.assessmentTypeId || !cell.recordedAt) {
-      importedCells.push(cell)
-      continue
-    }
+  return persistedByMatricula
+}
 
-    const recordedAt = parseDateInput(cell.recordedAt)
-    if (!recordedAt) throw new Error(`Invalid generated assessment date: ${cell.recordedAt}`)
+function buildEnrollmentMap(persistedByMatricula: Map<string, PersistedStudent>): Map<string, string> {
+  const enrollmentIdByStudentId = new Map<string, string>()
 
-    const assessment = await input.transaction.studentAssessment.create({
-      data: {
-        studentId: input.studentId,
-        enrollmentId: input.enrollmentId,
+  for (const student of persistedByMatricula.values()) {
+    enrollmentIdByStudentId.set(student.id, student.enrollments[0]?.id || randomUUID())
+  }
+
+  return enrollmentIdByStudentId
+}
+
+function buildStudentsToCreate(
+  rows: StudentImportRowResult[],
+  existingByMatricula: Map<string, ExistingStudentWithEnrollments>,
+  persistedByMatricula: Map<string, PersistedStudent>,
+  classRecord: { id: string; schoolId: string }
+): Prisma.StudentCreateManyInput[] {
+  return rows
+    .filter(isImportedRow)
+    .filter((row) => !existingByMatricula.has(row.matricula))
+    .map((row) => {
+      const student = getPersistedStudent(row, persistedByMatricula)
+      return {
+        id: student.id,
+        name: row.name,
+        studentNumber: row.matricula,
+        schoolId: classRecord.schoolId,
+        classId: classRecord.id,
+      }
+    })
+}
+
+function buildEnrollmentsToCreate(
+  rows: StudentImportRowResult[],
+  persistedByMatricula: Map<string, PersistedStudent>,
+  enrollmentIdByStudentId: Map<string, string>,
+  classId: string,
+  startedAt: Date
+): Prisma.StudentEnrollmentCreateManyInput[] {
+  return rows
+    .filter(isImportedRow)
+    .map((row) => getPersistedStudent(row, persistedByMatricula))
+    .filter((student) => !student.enrollments.some((enrollment) => enrollment.classId === classId))
+    .map((student) => ({
+      id: getEnrollmentId(student.id, enrollmentIdByStudentId),
+      studentId: student.id,
+      classId,
+      startedAt,
+    }))
+}
+
+function buildAssessmentsToCreate(
+  rows: StudentImportRowResult[],
+  persistedByMatricula: Map<string, PersistedStudent>,
+  enrollmentIdByStudentId: Map<string, string>,
+  userId: string,
+  assessmentIdsByCell: Map<string, string>
+): Prisma.StudentAssessmentCreateManyInput[] {
+  return rows.filter(isImportedRow).flatMap((row) => {
+    const student = getPersistedStudent(row, persistedByMatricula)
+    const enrollmentId = getEnrollmentId(student.id, enrollmentIdByStudentId)
+
+    return row.cells.filter(isImportedCell).map((cell) => {
+      const recordedAt = parseDateInput(cell.recordedAt)
+      if (!recordedAt) throw new Error(`Invalid generated assessment date: ${cell.recordedAt}`)
+
+      const id = randomUUID()
+      assessmentIdsByCell.set(getCellKey(row.rowId, cell.month), id)
+      return {
+        id,
+        studentId: student.id,
+        enrollmentId,
         assessmentTypeId: cell.assessmentTypeId,
         assessmentLevelId: cell.readingLevelId,
-        userId: input.userId,
+        userId,
         recordedAt,
-      },
+      }
     })
+  })
+}
 
-    importedCells.push({ ...cell, assessmentId: assessment.id })
+function addPersistedIdsToRow(
+  row: StudentImportRowResult,
+  persistedByMatricula: Map<string, PersistedStudent>,
+  assessmentIdsByCell: Map<string, string>
+): StudentImportRowResult {
+  if (row.status !== 'imported') return row
+
+  const student = getPersistedStudent(row, persistedByMatricula)
+  return {
+    ...row,
+    studentId: student.id,
+    cells: row.cells.map((cell) => ({
+      ...cell,
+      assessmentId: assessmentIdsByCell.get(getCellKey(row.rowId, cell.month)) || cell.assessmentId,
+    })),
   }
+}
 
-  return importedCells
+function getPersistedStudent(
+  row: StudentImportRowResult,
+  persistedByMatricula: Map<string, PersistedStudent>
+): PersistedStudent {
+  const student = persistedByMatricula.get(row.matricula)
+  if (!student) throw new Error(`Missing persisted student for matrícula "${row.matricula}".`)
+  return student
+}
+
+function getEnrollmentId(studentId: string, enrollmentIdByStudentId: Map<string, string>): string {
+  const enrollmentId = enrollmentIdByStudentId.get(studentId)
+  if (!enrollmentId) throw new Error(`Missing enrollment for student "${studentId}".`)
+  return enrollmentId
+}
+
+function getCellKey(rowId: string, month: string): string {
+  return `${rowId}:${month}`
+}
+
+function isImportedRow(row: StudentImportRowResult): boolean {
+  return row.status === 'imported'
+}
+
+function isImportedCell(
+  cell: StudentImportCellResult
+): cell is StudentImportCellResult & {
+  status: 'imported'
+  readingLevelId: string
+  assessmentTypeId: string
+  recordedAt: string
+} {
+  return cell.status === 'imported' && Boolean(cell.readingLevelId && cell.assessmentTypeId && cell.recordedAt)
 }
 
 class StudentImportCommitError extends Error {

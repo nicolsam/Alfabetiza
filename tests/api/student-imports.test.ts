@@ -6,9 +6,9 @@ const {
   mockFindClass,
   mockFindLevels,
   mockFindStudents,
-  mockCreateStudent,
-  mockCreateEnrollment,
-  mockCreateAssessment,
+  mockCreateStudents,
+  mockCreateEnrollments,
+  mockCreateAssessments,
   mockTransaction,
   mockLogAction,
 } = vi.hoisted(() => ({
@@ -17,9 +17,9 @@ const {
   mockFindClass: vi.fn(),
   mockFindLevels: vi.fn(),
   mockFindStudents: vi.fn(),
-  mockCreateStudent: vi.fn(),
-  mockCreateEnrollment: vi.fn(),
-  mockCreateAssessment: vi.fn(),
+  mockCreateStudents: vi.fn(),
+  mockCreateEnrollments: vi.fn(),
+  mockCreateAssessments: vi.fn(),
   mockTransaction: vi.fn(),
   mockLogAction: vi.fn(),
 }))
@@ -39,10 +39,10 @@ vi.mock('@/lib/db', () => ({
     assessmentLevel: { findMany: mockFindLevels },
     student: {
       findMany: mockFindStudents,
-      create: mockCreateStudent,
+      createMany: mockCreateStudents,
     },
-    studentEnrollment: { create: mockCreateEnrollment },
-    studentAssessment: { create: mockCreateAssessment },
+    studentEnrollment: { createMany: mockCreateEnrollments },
+    studentAssessment: { createMany: mockCreateAssessments },
     $transaction: mockTransaction,
   },
 }))
@@ -90,18 +90,13 @@ describe('API: /api/students/import/commit', () => {
     mockFindLevels.mockResolvedValue(readingLevels)
     mockFindStudents.mockResolvedValue([])
     mockLogAction.mockResolvedValue(undefined)
-    mockCreateAssessment.mockResolvedValue({ id: 'assessment-1' })
-    mockCreateEnrollment.mockResolvedValue({ id: 'enrollment-created', classId: 'class-1' })
-    mockCreateStudent.mockResolvedValue({
-      id: 'student-created',
-      name: 'Ana',
-      studentNumber: 'MAT-1',
-      enrollments: [{ id: 'enrollment-1', classId: 'class-1' }],
-    })
+    mockCreateAssessments.mockResolvedValue({ count: 1 })
+    mockCreateEnrollments.mockResolvedValue({ count: 1 })
+    mockCreateStudents.mockResolvedValue({ count: 1 })
     mockTransaction.mockImplementation(async (callback) => callback({
-      student: { create: mockCreateStudent },
-      studentEnrollment: { create: mockCreateEnrollment },
-      studentAssessment: { create: mockCreateAssessment },
+      student: { createMany: mockCreateStudents },
+      studentEnrollment: { createMany: mockCreateEnrollments },
+      studentAssessment: { createMany: mockCreateAssessments },
     }))
   })
 
@@ -120,27 +115,84 @@ describe('API: /api/students/import/commit', () => {
 
     expect(response.status).toBe(200)
     expect(data.summary).toMatchObject({ importedRows: 1, importedCells: 2, createdStudents: 1 })
-    expect(mockCreateStudent).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        name: 'Ana',
-        studentNumber: 'MAT-1',
-        schoolId: 'school-1',
-        classId: 'class-1',
-      }),
-    }))
-    expect(mockCreateAssessment).toHaveBeenCalledTimes(2)
-    expect(mockCreateAssessment).toHaveBeenNthCalledWith(1, {
-      data: expect.objectContaining({
-        assessmentLevelId: 'level-rw',
-        assessmentTypeId: 'type-reading',
-        recordedAt: new Date(2026, 1, 1),
-      }),
+    expect(data.rows[0].studentId).toEqual(expect.any(String))
+    expect(data.rows[0].cells[0].assessmentId).toEqual(expect.any(String))
+    expect(data.rows[0].cells[1].assessmentId).toEqual(expect.any(String))
+    expect(mockCreateStudents).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          id: data.rows[0].studentId,
+          name: 'Ana',
+          studentNumber: 'MAT-1',
+          schoolId: 'school-1',
+          classId: 'class-1',
+        }),
+      ],
     })
-    expect(mockCreateAssessment).toHaveBeenNthCalledWith(2, {
-      data: expect.objectContaining({
-        assessmentLevelId: 'level-rs',
-        recordedAt: new Date(2026, 2, 1),
-      }),
+    expect(mockCreateEnrollments).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          studentId: data.rows[0].studentId,
+          classId: 'class-1',
+          startedAt: new Date(2026, 0, 1),
+        }),
+      ],
+    })
+    expect(mockCreateAssessments).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          id: data.rows[0].cells[0].assessmentId,
+          studentId: data.rows[0].studentId,
+          assessmentLevelId: 'level-rw',
+          assessmentTypeId: 'type-reading',
+          recordedAt: new Date(2026, 1, 1),
+        }),
+        expect.objectContaining({
+          id: data.rows[0].cells[1].assessmentId,
+          studentId: data.rows[0].studentId,
+          assessmentLevelId: 'level-rs',
+          recordedAt: new Date(2026, 2, 1),
+        }),
+      ],
+    })
+    expect(mockTransaction).toHaveBeenCalledWith(expect.any(Function), { timeout: 20000 })
+  })
+
+  it('creates multiple students and assessments with batch inserts', async () => {
+    const response = await commitImport(createCommitRequest({
+      rows: [
+        { rowId: 'row-1', matricula: 'MAT-1', name: 'Ana', levelsByMonth: { '02/2026': 'RW' } },
+        { rowId: 'row-2', matricula: 'MAT-2', name: 'Bia', levelsByMonth: { '03/2026': 'RS' } },
+      ],
+    }))
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.summary).toMatchObject({ importedRows: 2, importedCells: 2, createdStudents: 2 })
+    expect(mockCreateStudents).toHaveBeenCalledTimes(1)
+    expect(mockCreateStudents).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Ana',
+          studentNumber: 'MAT-1',
+          schoolId: 'school-1',
+          classId: 'class-1',
+        }),
+        expect.objectContaining({
+          name: 'Bia',
+          studentNumber: 'MAT-2',
+          schoolId: 'school-1',
+          classId: 'class-1',
+        }),
+      ]),
+    })
+    expect(mockCreateEnrollments).toHaveBeenCalledTimes(1)
+    expect(mockCreateAssessments).toHaveBeenCalledTimes(1)
+    expect(mockCreateAssessments).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({ assessmentLevelId: 'level-rw' }),
+        expect.objectContaining({ assessmentLevelId: 'level-rs' }),
+      ]),
     })
   })
 
@@ -170,12 +222,15 @@ describe('API: /api/students/import/commit', () => {
     expect(response.status).toBe(200)
     expect(data.summary).toMatchObject({ importedRows: 1, importedCells: 1, reusedStudents: 1 })
     expect(data.rows[0].message).toContain('Existing student found')
-    expect(mockCreateStudent).not.toHaveBeenCalled()
-    expect(mockCreateAssessment).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        studentId: 'student-existing',
-        enrollmentId: 'enrollment-existing',
-      }),
+    expect(mockCreateStudents).not.toHaveBeenCalled()
+    expect(mockCreateEnrollments).not.toHaveBeenCalled()
+    expect(mockCreateAssessments).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          studentId: 'student-existing',
+          enrollmentId: 'enrollment-existing',
+        }),
+      ],
     })
   })
 
@@ -202,12 +257,14 @@ describe('API: /api/students/import/commit', () => {
     }))
 
     expect(response.status).toBe(200)
-    expect(mockCreateEnrollment).toHaveBeenCalledWith({
-      data: {
-        studentId: 'student-existing',
-        classId: 'class-1',
-        startedAt: new Date(2026, 0, 1),
-      },
+    expect(mockCreateEnrollments).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          studentId: 'student-existing',
+          classId: 'class-1',
+          startedAt: new Date(2026, 0, 1),
+        }),
+      ],
     })
   })
 
@@ -225,7 +282,7 @@ describe('API: /api/students/import/commit', () => {
     }))
 
     expect(response.status).toBe(403)
-    expect(mockCreateStudent).not.toHaveBeenCalled()
+    expect(mockCreateStudents).not.toHaveBeenCalled()
   })
 
   it('rejects requests without a selected class', async () => {
@@ -249,8 +306,8 @@ describe('API: /api/students/import/commit', () => {
     expect(response.status).toBe(200)
     expect(data.summary).toMatchObject({ importedRows: 0, incompleteRows: 1 })
     expect(data.rows[0].message).toContain('Class grade is required')
-    expect(mockCreateStudent).not.toHaveBeenCalled()
-    expect(mockCreateAssessment).not.toHaveBeenCalled()
+    expect(mockCreateStudents).not.toHaveBeenCalled()
+    expect(mockCreateAssessments).not.toHaveBeenCalled()
   })
 
   it('reports duplicate matrícula values in the submitted list', async () => {
@@ -266,23 +323,23 @@ describe('API: /api/students/import/commit', () => {
     expect(data.summary).toMatchObject({ importedRows: 0, invalidRows: 2 })
     expect(data.rows[0].message).toContain('Duplicate matrícula')
     expect(data.rows[1].message).toContain('Duplicate matrícula')
-    expect(mockCreateStudent).not.toHaveBeenCalled()
-    expect(mockCreateAssessment).not.toHaveBeenCalled()
+    expect(mockCreateStudents).not.toHaveBeenCalled()
+    expect(mockCreateAssessments).not.toHaveBeenCalled()
   })
 
   it('reports invalid month and level rows without importing them', async () => {
     const response = await commitImport(createCommitRequest({
-      months: ['02/2026', '07/2026'],
+      months: ['02/2026', '12/2026'],
       rows: [
         { rowId: 'row-1', matricula: 'MAT-1', name: 'Ana', levelsByMonth: { '02/2026': 'Unknown' } },
-        { rowId: 'row-2', matricula: 'MAT-2', name: 'Bia', levelsByMonth: { '07/2026': 'RW' } },
+        { rowId: 'row-2', matricula: 'MAT-2', name: 'Bia', levelsByMonth: { '12/2026': 'RW' } },
       ],
     }))
     const data = await response.json()
 
     expect(response.status).toBe(200)
     expect(data.summary).toMatchObject({ importedRows: 0, invalidRows: 2 })
-    expect(mockCreateStudent).not.toHaveBeenCalled()
-    expect(mockCreateAssessment).not.toHaveBeenCalled()
+    expect(mockCreateStudents).not.toHaveBeenCalled()
+    expect(mockCreateAssessments).not.toHaveBeenCalled()
   })
 })
