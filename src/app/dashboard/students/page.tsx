@@ -60,6 +60,7 @@ import StudentImportModal, {
   type StudentImportResultSummary,
 } from '@/components/students/StudentImportModal'
 import { useTourDemoMode } from '@/components/tours/useTourDemoMode'
+import { DashboardAddButton } from '@/components/dashboard/DashboardAddButton'
 import {
   TOUR_DEMO_READING_LEVELS,
   TOUR_DEMO_STUDENT,
@@ -511,17 +512,15 @@ export default function StudentsPage() {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
         {canManageStudents && (
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowImportModal(true)} data-testid="student-import-open" data-tour="students-import-button">
+          <div className="grid w-full gap-2 sm:flex sm:w-auto sm:justify-end">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => setShowImportModal(true)} data-testid="student-import-open" data-tour="students-import-button">
               <FileSpreadsheet className="size-4" />
               {t('importStudents')}
             </Button>
-            <Button onClick={() => setShowModal(true)}>
-              {t('add')}
-            </Button>
+            <DashboardAddButton onClick={() => setShowModal(true)} label={t('add')} />
           </div>
         )}
       </div>

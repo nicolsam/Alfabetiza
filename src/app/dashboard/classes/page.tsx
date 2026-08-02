@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { canManageSchoolScopedRecords, getStoredUser, type StoredUser } from '@/lib/client-auth'
+import { DashboardAddButton } from '@/components/dashboard/DashboardAddButton'
 
 interface School {
   id: string
@@ -256,15 +257,13 @@ export default function ClassesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
         {canManageClasses && (
-          <button
+          <DashboardAddButton
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            {t('add')}
-          </button>
+            label={t('add')}
+          />
         )}
       </div>
 

@@ -16,7 +16,7 @@ test.describe('Alfabetiza E2E Workflow', () => {
   test('should go through the full workflow: register, school, class, student, and filtering', async ({ page }) => {
     const userEmail = `teacher_${Date.now()}@example.com`;
     const hashedPassword = await bcrypt.hash('password123', 10);
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name: 'Test Teacher',
         email: userEmail,
@@ -38,7 +38,10 @@ test.describe('Alfabetiza E2E Workflow', () => {
     // 2. Create School
     schoolName = `Test School ${Date.now()}`;
     await page.getByRole('link', { name: /Escolas|Schools/ }).click();
-    await page.getByRole('button', { name: /Adicionar Escola|Add School/ }).click();
+    const addSchoolButton = page.getByRole('button', { name: /Adicionar Escola|Add School/ });
+    await expect(addSchoolButton).toHaveAttribute('data-slot', 'button');
+    await expect(addSchoolButton.locator('svg')).toBeVisible();
+    await addSchoolButton.click();
     await page.fill('input[placeholder*="escola"]', schoolName);
     // Click the submit button inside the modal
     await page.locator('form button[type="submit"]').click();
@@ -48,7 +51,10 @@ test.describe('Alfabetiza E2E Workflow', () => {
     // 3. Create Class
     sectionName = 'X' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
     await page.getByRole('link', { name: /Turmas|Classes/ }).click();
-    await page.getByRole('button', { name: /Adicionar Turma|Add Class/ }).click();
+    const addClassButton = page.getByRole('button', { name: /Adicionar Turma|Add Class/ });
+    await expect(addClassButton).toHaveAttribute('data-slot', 'button');
+    await expect(addClassButton.locator('svg')).toBeVisible();
+    await addClassButton.click();
     await page.locator('select').filter({ hasText: /Selecionar escola|Select school/ }).selectOption({ label: schoolName });
     await page.locator('select').filter({ hasText: /Selecionar ano|Select grade/ }).selectOption('1º Ano');
     await page.fill('input[placeholder*="Turma"], input[placeholder*="Section"]', sectionName);
@@ -59,7 +65,10 @@ test.describe('Alfabetiza E2E Workflow', () => {
 
     // 4. Create Student
     await page.getByRole('link', { name: /Alunos|Students/ }).click();
-    await page.getByRole('button', { name: /Adicionar Aluno|Add Student/ }).click();
+    const addStudentButton = page.getByRole('button', { name: /Adicionar Aluno|Add Student/ });
+    await expect(addStudentButton).toHaveAttribute('data-slot', 'button');
+    await expect(addStudentButton.locator('svg')).toBeVisible();
+    await addStudentButton.click();
     await page.getByRole('combobox').filter({ hasText: /Selecionar uma turma|Select a class/ }).click();
     await page.getByRole('option', { name: new RegExp('1º Ano ' + sectionName) }).click();
     await page.fill('input[placeholder*="Nome"], input[placeholder*="Name"]', 'John Doe');

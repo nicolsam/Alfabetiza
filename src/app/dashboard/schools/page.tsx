@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
 import { PaginationControls } from '@/components/ui/pagination-controls'
+import { DashboardAddButton } from '@/components/dashboard/DashboardAddButton'
 import {
   DEFAULT_PAGE_SIZE,
   type PaginationMeta,
@@ -176,14 +177,12 @@ export default function SchoolsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <button
+        <DashboardAddButton
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          {t('add')}
-        </button>
+          label={t('add')}
+        />
       </div>
 
       <div className="mb-6 bg-white p-4 rounded-lg shadow">
