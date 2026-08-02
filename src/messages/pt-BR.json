@@ -33,6 +33,13 @@
     "coordinators": "Coordenadores",
     "schools": "Escolas",
     "classes": "Turmas",
+    "adminPanel": "Painel administrativo",
+    "categories": {
+      "overview": "Visão geral",
+      "learning": "Acompanhamento",
+      "management": "Gestão",
+      "system": "Sistema"
+    },
     "logout": "Sair",
     "language": "Idioma",
     "roles": {

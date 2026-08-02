@@ -33,6 +33,13 @@
     "coordinators": "Coordinators",
     "schools": "Schools",
     "classes": "Classes",
+    "adminPanel": "Admin panel",
+    "categories": {
+      "overview": "Overview",
+      "learning": "Learning",
+      "management": "Management",
+      "system": "System"
+    },
     "logout": "Logout",
     "language": "Language",
     "roles": {
