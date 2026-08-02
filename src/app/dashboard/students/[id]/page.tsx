@@ -226,7 +226,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     })
     let res = await submitLevel()
     if (res.status === 409) {
-      if (!window.confirm(t('confirmReplaceMonth', { month: updateLevel.referenceMonth }))) return
+      if (!window.confirm(t('confirmReplaceMonth', {
+        month: formatLocalizedMonth(updateLevel.referenceMonth, locale),
+      }))) return
       res = await submitLevel(true)
     }
 
@@ -307,7 +309,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     })
     let res = await submitEdit()
     if (editingItem.type === 'history' && res.status === 409) {
-      if (!window.confirm(t('confirmReplaceMonth', { month: editHistoryData.referenceMonth }))) return
+      if (!window.confirm(t('confirmReplaceMonth', {
+        month: formatLocalizedMonth(editHistoryData.referenceMonth, locale),
+      }))) return
       res = await submitEdit(true)
     }
 

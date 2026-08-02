@@ -15,6 +15,8 @@ import {
   parseDateInput,
   parseReferenceMonth,
   formatReferenceMonth,
+  formatMonthName,
+  formatLocalizedMonth,
   toInputMonth,
 } from '@/lib/monthly-updates'
 
@@ -33,6 +35,13 @@ describe('monthly update helpers', () => {
     expect(parseReferenceMonth('04/2026')).toEqual(new Date('2026-04-01T00:00:00.000Z'))
     expect(parseReferenceMonth('13/2026')).toBeNull()
     expect(formatReferenceMonth(new Date('2026-04-01T00:00:00.000Z'))).toBe('04/2026')
+  })
+
+  it('formats localized month names instead of month numbers', () => {
+    expect(formatMonthName('04', 'en')).toBe('April')
+    expect(formatMonthName('04', 'pt-BR')).toBe('Abril')
+    expect(formatLocalizedMonth('04/2026', 'en')).toBe('Apr 2026')
+    expect(formatLocalizedMonth('04/2026', 'pt-BR')).toMatch(/^Abr/)
   })
 
   it('builds month keys from split month and year filters', () => {

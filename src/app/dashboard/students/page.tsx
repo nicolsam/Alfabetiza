@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import StudentsSkeleton from '@/components/skeletons/StudentsSkeleton'
 import { toast } from "sonner"
 import {
@@ -32,6 +32,8 @@ import {
 } from '@/lib/pagination'
 import {
   buildMonthKey,
+  formatLocalizedMonth,
+  formatMonthName,
   getAvailableMonthOptions,
   fromInputMonth,
   getMonthKey,
@@ -123,6 +125,7 @@ const DEFAULT_PAGINATION: PaginationMeta = {
 export default function StudentsPage() {
   const router = useRouter()
   const t = useTranslations('students')
+  const locale = useLocale()
   const tClasses = useTranslations('classes')
   const tCommon = useTranslations('common')
   const tLevels = useTranslations('levels')
@@ -443,7 +446,7 @@ export default function StudentsPage() {
     let res = await submitLevel()
 
     if (res.status === 409) {
-      if (!window.confirm(t('confirmReplaceMonth', { month: updateLevel.referenceMonth }))) return
+      if (!window.confirm(t('confirmReplaceMonth', { month: formatLocalizedMonth(updateLevel.referenceMonth, locale) }))) return
       res = await submitLevel(true)
     }
 
@@ -615,7 +618,7 @@ export default function StudentsPage() {
               <SelectContent>
                 {availableMonths.map((month) => (
                   <SelectItem key={month.value} value={month.value}>
-                    {month.label}
+                    {formatMonthName(month.value, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>

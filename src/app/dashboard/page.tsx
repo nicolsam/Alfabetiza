@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { ArrowRight } from 'lucide-react'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import ChartSkeleton from '@/components/dashboard/ChartSkeleton'
@@ -14,6 +14,8 @@ import { getSectionOptionsForGrade, resolveSectionFilter } from '@/lib/class-fil
 import { cachedJson } from '@/lib/client-get-cache'
 import {
   buildMonthKey,
+  formatLocalizedMonth,
+  formatMonthName,
   getAvailableMonthOptions,
   getMonthKey,
   getMonthPartFromMonthKey,
@@ -69,6 +71,7 @@ interface Stats {
 export default function DashboardPage() {
   const router = useRouter()
   const t = useTranslations()
+  const locale = useLocale()
   const activeDemoTour = useTourDemoMode()
   const [stats, setStats] = useState<Stats | null>(null)
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([])
@@ -294,7 +297,7 @@ export default function DashboardPage() {
               <SelectContent>
                 {availableMonths.map((month) => (
                   <SelectItem key={month.value} value={month.value}>
-                    {month.label}
+                    {formatMonthName(month.value, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -334,7 +337,7 @@ export default function DashboardPage() {
               <AlertDescription>
                 {t('dashboard.monthlyUpdateAlertDescription', {
                   count: visibleStats.monthlyUpdates.missingCount,
-                  month: visibleStats.monthlyUpdates.month,
+                  month: formatLocalizedMonth(visibleStats.monthlyUpdates.month, locale),
                 })}
               </AlertDescription>
             </div>
@@ -353,7 +356,7 @@ export default function DashboardPage() {
           <AlertDescription>
             {t('dashboard.pastMonthInfoDescription', {
               count: visibleStats.monthlyUpdates.missingCount,
-              month: visibleStats.monthlyUpdates.month,
+              month: formatLocalizedMonth(visibleStats.monthlyUpdates.month, locale),
             })}
           </AlertDescription>
         </Alert>

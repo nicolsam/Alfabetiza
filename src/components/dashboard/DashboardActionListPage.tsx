@@ -35,6 +35,7 @@ import {
   getAvailableMonthOptions,
   fromInputMonth,
   formatLocalizedMonth,
+  formatMonthName,
   getMonthKey,
   getMonthPartFromMonthKey,
   getYearFromMonthKey,
@@ -322,7 +323,9 @@ export default function DashboardActionListPage({
     })
     let res = await submitLevel()
     if (res.status === 409) {
-      if (!window.confirm(t('students.confirmReplaceMonth', { month: updateLevel.referenceMonth }))) return
+      if (!window.confirm(t('students.confirmReplaceMonth', {
+        month: formatLocalizedMonth(updateLevel.referenceMonth, locale),
+      }))) return
       res = await submitLevel(true)
     }
 
@@ -403,7 +406,7 @@ export default function DashboardActionListPage({
                 <SelectContent>
                   {availableMonths.map((month) => (
                     <SelectItem key={month.value} value={month.value}>
-                      {month.label}
+                      {formatMonthName(month.value, locale)}
                     </SelectItem>
                   ))}
                 </SelectContent>

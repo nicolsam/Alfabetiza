@@ -94,11 +94,23 @@ export function formatLocalizedMonth(value: Date | string, locale: string): stri
   const date = typeof value === 'string' && MONTH_KEY_PATTERN.test(value)
     ? parseReferenceMonth(value)!
     : new Date(value)
-  return new Intl.DateTimeFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', {
+  const label = new Intl.DateTimeFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', {
     month: 'short',
     year: 'numeric',
     timeZone: 'UTC',
   }).format(date)
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+export function formatMonthName(month: string, locale: string): string {
+  const monthNumber = Number(month)
+  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) return month
+
+  const label = new Intl.DateTimeFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', {
+    month: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(2026, monthNumber - 1, 1)))
+  return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
 /**
