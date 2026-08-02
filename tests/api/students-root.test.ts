@@ -98,7 +98,7 @@ describe('API: /api/students', () => {
         id: students[0].id,
         name: students[0].name,
         monthlyUpdateStatus: 'missing',
-        latestAssessmentDate: null,
+        latestAssessmentMonth: null,
       }),
     ])
     expect(mockFindUserSchool).not.toHaveBeenCalled()
@@ -166,12 +166,12 @@ describe('API: /api/students', () => {
       {
         id: 'student-1',
         name: 'Student 1',
-        assessments: [{ id: 'history-1', assessmentLevelId: 'level-1', assessmentLevel: {}, recordedAt: new Date('2026-04-10T12:00:00.000Z') }],
+        assessments: [{ id: 'history-1', assessmentLevelId: 'level-1', assessmentLevel: {}, referenceMonth: new Date(2026, 3, 1) }],
       },
       {
         id: 'student-2',
         name: 'Student 2',
-        assessments: [{ id: 'history-2', assessmentLevelId: 'level-2', assessmentLevel: {}, recordedAt: new Date('2026-03-10T12:00:00.000Z') }],
+        assessments: [{ id: 'history-2', assessmentLevelId: 'level-2', assessmentLevel: {}, referenceMonth: new Date(2026, 2, 1) }],
       },
       { id: 'student-3', name: 'Student 3', assessments: [] },
     ])
@@ -186,21 +186,21 @@ describe('API: /api/students', () => {
         monthlyUpdateStatus: 'updated',
         monthStatus: expect.stringMatching(/current|past/),
         selectedMonth: '04/2026',
-        latestAssessmentDate: '2026-04-10T12:00:00.000Z',
+        latestAssessmentMonth: '04/2026',
       },
       {
         id: 'student-2',
         monthlyUpdateStatus: 'missing',
         monthStatus: expect.stringMatching(/current|past/),
         selectedMonth: '04/2026',
-        latestAssessmentDate: '2026-03-10T12:00:00.000Z',
+        latestAssessmentMonth: '03/2026',
       },
       {
         id: 'student-3',
         monthlyUpdateStatus: 'missing',
         monthStatus: expect.stringMatching(/current|past/),
         selectedMonth: '04/2026',
-        latestAssessmentDate: null,
+        latestAssessmentMonth: null,
       },
     ])
   })

@@ -1,6 +1,6 @@
 export type StudentProgressHistoryEntry = {
   id: string
-  recordedAt: string | Date
+  referenceMonth: string | Date
   notes: string | null
   readingLevel: {
     code: string
@@ -44,14 +44,13 @@ export function buildStudentAssessmentProgressChartData(
   locale: string,
   translateLevel: (code: string) => string
 ): StudentProgressChartPoint[] {
-  const dateLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US'
-
   return [...history].reverse().map((entry) => ({
     id: entry.id,
-    date: new Date(entry.recordedAt).toLocaleDateString(dateLocale, {
-      day: '2-digit',
-      month: 'short',
-    }),
+    date: typeof entry.referenceMonth === 'string' && /^\d{2}\/\d{4}$/.test(entry.referenceMonth)
+      ? new Intl.DateTimeFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', { month: 'short', year: 'numeric' })
+          .format(new Date(Number(entry.referenceMonth.slice(3)), Number(entry.referenceMonth.slice(0, 2)) - 1, 1))
+      : new Intl.DateTimeFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+          .format(new Date(entry.referenceMonth)),
     level: entry.readingLevel.order,
     levelName: translateLevel(entry.readingLevel.code),
     code: entry.readingLevel.code,

@@ -82,13 +82,13 @@ describe('GET /api/students/[id]/history', () => {
     vi.mocked(prisma.userSchool.findUnique).mockResolvedValue({} as never)
     vi.mocked(prisma.studentAssessment.findMany).mockResolvedValue([
       {
-        id: 'h1', recordedAt: new Date(), notes: 'Good progress',
+        id: 'h1', referenceMonth: new Date(2026, 4, 1), notes: 'Good progress',
         assessmentLevelId: 'level-rw',
         assessmentLevel: { code: 'RW', name: 'Reads Words', order: 4 },
         user: { name: 'Teacher A' }
       },
       {
-        id: 'h2', recordedAt: new Date(), notes: null,
+        id: 'h2', referenceMonth: new Date(2026, 3, 1), notes: null,
         assessmentLevelId: 'level-lo',
         assessmentLevel: { code: 'LO', name: 'Letters Only', order: 2 },
         user: { name: 'Teacher A' }

@@ -43,10 +43,11 @@ Class creation and updates validate grade, section, shift, teacher-school access
 - `PUT /api/students/[id]`: update student data.
 - `DELETE /api/students/[id]`: soft delete a student.
 - `PATCH /api/students/[id]/restore`: restore a soft-deleted student.
-- `PATCH /api/students/update`: record a reading level change.
+- `PATCH /api/students/update`: create or replace a monthly reading level using `referenceMonth` (`MM/YYYY`). Existing months return `409 MONTH_ALREADY_RECORDED` until resent with `confirmReplace: true`.
 - `GET /api/students/[id]/history`: return student details and reading history.
 
 Student numbers are unique within a school.
+Reading assessments are unique per student, assessment type, and reference month; exact assessment days are not stored.
 
 ## Reading Levels
 

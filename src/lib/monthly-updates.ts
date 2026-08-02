@@ -13,7 +13,7 @@ export interface MonthInfo {
 }
 
 export interface AssessmentDate {
-  recordedAt: Date | string
+  referenceMonth: Date | string
 }
 
 /** Matches MM/YYYY — the Brazilian standard month format. */
@@ -77,6 +77,30 @@ export function fromInputMonth(inputValue: string): string {
   return `${month}/${year}`
 }
 
+/** Parse MM/YYYY into the first local calendar day used to persist a month. */
+export function parseReferenceMonth(value: string): Date | null {
+  if (!MONTH_KEY_PATTERN.test(value)) return null
+
+  const [month, year] = value.split('/').map(Number)
+  return new Date(Date.UTC(year, month - 1, 1))
+}
+
+export function formatReferenceMonth(value: Date | string): string {
+  const date = new Date(value)
+  return getMonthKey(new Date(date.getUTCFullYear(), date.getUTCMonth(), 1))
+}
+
+export function formatLocalizedMonth(value: Date | string, locale: string): string {
+  const date = typeof value === 'string' && MONTH_KEY_PATTERN.test(value)
+    ? parseReferenceMonth(value)!
+    : new Date(value)
+  return new Intl.DateTimeFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date)
+}
+
 /**
  * Accept a month string and resolve it to a valid MM/YYYY key.
  *
@@ -129,18 +153,6 @@ export function buildMonthKey(month: string, year: string | number): string {
   return resolveMonthKey(`${month}/${year}`)
 }
 
-export function getDefaultAssessmentDateForMonth(month: string, now = new Date()): string {
-  const { monthStatus, range } = resolveMonthInfo(month, now)
-  const assessmentDate = monthStatus === 'current'
-    ? now
-    : new Date(range.end.getTime() - 24 * 60 * 60 * 1000)
-
-  const year = assessmentDate.getFullYear()
-  const monthValue = String(assessmentDate.getMonth() + 1).padStart(2, '0')
-  const day = String(assessmentDate.getDate()).padStart(2, '0')
-  return `${year}-${monthValue}-${day}`
-}
-
 export function parseDateInput(value: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   if (!match) return null
@@ -190,12 +202,19 @@ export function hasMonthlyAssessmentUpdate(
   assessments: AssessmentDate[] | undefined,
   range: MonthRange
 ): boolean {
-  return !!assessments?.some((record) => isDateInMonth(record.recordedAt, range))
+  return !!assessments?.some((record) => (
+    typeof record.referenceMonth === 'string' && MONTH_KEY_PATTERN.test(record.referenceMonth)
+      ? record.referenceMonth === range.month
+      : formatReferenceMonth(record.referenceMonth) === range.month
+  ))
 }
 
-export function getLatestAssessmentDate(assessments: AssessmentDate[] | undefined): string | null {
-  const latestDate = assessments?.[0]?.recordedAt
-  return latestDate ? new Date(latestDate).toISOString() : null
+export function getLatestAssessmentMonth(assessments: AssessmentDate[] | undefined): string | null {
+  const latestMonth = assessments?.[0]?.referenceMonth
+  if (!latestMonth) return null
+  return typeof latestMonth === 'string' && MONTH_KEY_PATTERN.test(latestMonth)
+    ? latestMonth
+    : formatReferenceMonth(latestMonth)
 }
 
 export type ReadingAssessmentDate = AssessmentDate

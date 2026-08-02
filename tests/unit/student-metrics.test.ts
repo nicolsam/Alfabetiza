@@ -16,7 +16,7 @@ function student(
     monthlyUpdateStatus: 'updated',
     readingHistory: [{
       id: `${code}-history`,
-      recordedAt: '2026-04-10T12:00:00.000Z',
+      referenceMonth: '04/2026',
       createdAt: '2026-04-10T12:00:00.000Z',
       readingLevel: { code, order },
     }],
@@ -64,12 +64,12 @@ describe('student metric counts', () => {
   it('counts students improved in the selected month', () => {
     const improved = assessedStudent([
       {
-        recordedAt: '2026-04-10T12:00:00.000Z',
+        referenceMonth: '04/2026',
         createdAt: '2026-04-10T12:00:00.000Z',
         readingLevel: { code: 'RS', order: 5 },
       },
       {
-        recordedAt: '2026-03-10T12:00:00.000Z',
+        referenceMonth: '03/2026',
         createdAt: '2026-03-10T12:00:00.000Z',
         readingLevel: { code: 'RW', order: 4 },
       },
@@ -81,43 +81,43 @@ describe('student metric counts', () => {
   it('excludes non-improvement and out-of-month assessment cases', () => {
     const sameLevel = assessedStudent([
       {
-        recordedAt: '2026-04-10T12:00:00.000Z',
+        referenceMonth: '04/2026',
         createdAt: '2026-04-10T12:00:00.000Z',
         readingLevel: { code: 'RW', order: 4 },
       },
       {
-        recordedAt: '2026-03-10T12:00:00.000Z',
+        referenceMonth: '03/2026',
         createdAt: '2026-03-10T12:00:00.000Z',
         readingLevel: { code: 'RW', order: 4 },
       },
     ])
     const lowerLevel = assessedStudent([
       {
-        recordedAt: '2026-04-10T12:00:00.000Z',
+        referenceMonth: '04/2026',
         createdAt: '2026-04-10T12:00:00.000Z',
         readingLevel: { code: 'RW', order: 4 },
       },
       {
-        recordedAt: '2026-03-10T12:00:00.000Z',
+        referenceMonth: '03/2026',
         createdAt: '2026-03-10T12:00:00.000Z',
         readingLevel: { code: 'RS', order: 5 },
       },
     ])
     const noPrevious = assessedStudent([
       {
-        recordedAt: '2026-04-10T12:00:00.000Z',
+        referenceMonth: '04/2026',
         createdAt: '2026-04-10T12:00:00.000Z',
         readingLevel: { code: 'RS', order: 5 },
       },
     ])
     const noSelectedMonthAssessment = assessedStudent([
       {
-        recordedAt: '2026-03-10T12:00:00.000Z',
+        referenceMonth: '03/2026',
         createdAt: '2026-03-10T12:00:00.000Z',
         readingLevel: { code: 'RS', order: 5 },
       },
       {
-        recordedAt: '2026-02-10T12:00:00.000Z',
+        referenceMonth: '02/2026',
         createdAt: '2026-02-10T12:00:00.000Z',
         readingLevel: { code: 'RW', order: 4 },
       },
@@ -136,12 +136,12 @@ describe('student metric counts', () => {
       student('SO', 3, { monthlyUpdateStatus: 'missing' }),
       assessedStudent([
         {
-          recordedAt: '2026-04-10T12:00:00.000Z',
+          referenceMonth: '04/2026',
           createdAt: '2026-04-10T12:00:00.000Z',
           readingLevel: { code: 'RS', order: 5 },
         },
         {
-          recordedAt: '2026-03-10T12:00:00.000Z',
+          referenceMonth: '03/2026',
           createdAt: '2026-03-10T12:00:00.000Z',
           readingLevel: { code: 'RW', order: 4 },
         },

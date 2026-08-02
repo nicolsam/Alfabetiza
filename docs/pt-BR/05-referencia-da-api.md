@@ -43,10 +43,11 @@ Criação e atualização de turmas validam ano, seção, turno, acesso professo
 - `PUT /api/students/[id]`: atualiza dados do aluno.
 - `DELETE /api/students/[id]`: faz soft delete de um aluno.
 - `PATCH /api/students/[id]/restore`: restaura um aluno excluído logicamente.
-- `PATCH /api/students/update`: registra mudança de nível de leitura.
+- `PATCH /api/students/update`: cria ou substitui um nível mensal usando `referenceMonth` (`MM/AAAA`). Meses existentes retornam `409 MONTH_ALREADY_RECORDED` até o reenvio com `confirmReplace: true`.
 - `GET /api/students/[id]/history`: retorna detalhes do aluno e histórico de leitura.
 
 Números de aluno são únicos dentro de uma escola.
+Avaliações de leitura são únicas por aluno, tipo de avaliação e mês de referência; o dia exato da avaliação não é armazenado.
 
 ## Níveis De Leitura
 

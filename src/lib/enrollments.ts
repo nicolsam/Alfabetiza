@@ -49,6 +49,22 @@ export function getEnrollmentForDate<T extends EnrollmentWithClassYear>(
   )
 }
 
+export function getEnrollmentForMonth<T extends EnrollmentWithClassYear>(
+  enrollments: T[],
+  referenceMonth: Date
+): T | null {
+  const monthStart = new Date(Date.UTC(referenceMonth.getUTCFullYear(), referenceMonth.getUTCMonth(), 1))
+  const monthEnd = new Date(Date.UTC(referenceMonth.getUTCFullYear(), referenceMonth.getUTCMonth() + 1, 1))
+
+  return enrollments.find((enrollment) => {
+    if (enrollment.deletedAt || enrollment.class.academicYear !== monthStart.getUTCFullYear()) return false
+
+    const startedAt = new Date(enrollment.startedAt)
+    const endedAt = enrollment.endedAt ? new Date(enrollment.endedAt) : null
+    return startedAt < monthEnd && (!endedAt || endedAt >= monthStart)
+  }) || null
+}
+
 export function getCurrentEnrollment<T extends EnrollmentWithClassYear>(enrollments: T[]): T | null {
   const activeEnrollments = enrollments
     .filter((enrollment) => !enrollment.deletedAt && !enrollment.endedAt)

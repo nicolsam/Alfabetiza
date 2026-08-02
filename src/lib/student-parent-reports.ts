@@ -18,7 +18,7 @@ export type StudentParentReport = {
   expiresAt: Date
   history: {
     id: string
-    recordedAt: Date
+    referenceMonth: Date
     notes: string | null
     readingLevel: { code: string; name: string; order: number }
     teacher: { name: string; role: string }
@@ -29,6 +29,12 @@ export type StudentParentReport = {
     commentary: string
     teacher: { name: string; role: string }
   }[]
+}
+
+type ReportAuthor = {
+  name: string
+  isGlobalAdmin: boolean
+  schools: { role: string }[]
 }
 
 export async function getStudentParentReportByToken(
@@ -79,7 +85,7 @@ export async function getStudentParentReportByToken(
         studentId: reportLink.studentId,
         assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
       },
-      orderBy: [{ recordedAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ referenceMonth: 'desc' }, { createdAt: 'desc' }],
       include: {
         assessmentLevel: { select: { code: true, name: true, order: true } },
         user: { select: userSelect },
@@ -94,7 +100,7 @@ export async function getStudentParentReportByToken(
     })
   ])
 
-  const mapTeacher = (user: any) => ({
+  const mapTeacher = (user: ReportAuthor) => ({
     name: user.name,
     role: user.isGlobalAdmin ? 'Admin' : (user.schools?.[0]?.role === 'COORDINATOR' ? 'Coordinator' : 'Teacher')
   })

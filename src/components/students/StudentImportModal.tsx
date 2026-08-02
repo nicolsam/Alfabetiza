@@ -223,7 +223,7 @@ export default function StudentImportModal({
     setDraft(nextRows, parsed.months, month)
   }
 
-  const commitImport = async () => {
+  const commitImport = async (confirmReplace = false) => {
     const token = localStorage.getItem('token')
     if (!token || !selectedClassId || importMonths.length === 0) {
       setError(t('importMissingFields'))
@@ -246,11 +246,18 @@ export default function StudentImportModal({
         selectedClassId,
         months: importMonths,
         rows: rows.filter(hasStudentImportRowValue),
+        confirmReplace,
       }),
     })
     const data = await response.json()
 
     setCommitting(false)
+    if (response.status === 409 && data.code === 'MONTH_ALREADY_RECORDED') {
+      if (window.confirm(t('confirmReplaceImport', { count: data.conflicts?.length || 0 }))) {
+        await commitImport(true)
+      }
+      return
+    }
     if (!response.ok) {
       setError(data.error || t('importCommitError'))
       return
@@ -454,7 +461,7 @@ export default function StudentImportModal({
           <Button type="button" variant="outline" onClick={onCancel} data-tour="student-import-cancel">
             {tCommon('cancel')}
           </Button>
-          <Button type="button" onClick={commitImport} disabled={!canImport} data-testid="student-import-confirm">
+          <Button type="button" onClick={() => void commitImport()} disabled={!canImport} data-testid="student-import-confirm">
             {committing ? t('importImporting') : t('importConfirm')}
           </Button>
         </div>

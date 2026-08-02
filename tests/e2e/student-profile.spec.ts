@@ -82,7 +82,7 @@ async function seedFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: level1.id,
       userId: teacher.id,
-      recordedAt: new Date('2026-05-01T12:00:00.000Z'),
+      referenceMonth: new Date(2026, 4, 1),
     },
   })
 }
@@ -122,11 +122,13 @@ test.describe('student profile page', () => {
     
     // Select new level
     await page.locator('form').getByRole('combobox').selectOption({ index: 2 })
+    await page.locator('input[type="month"]').fill('2026-05')
 
     // Add note in Rich Text inside modal
     await page.locator('.ProseMirror').last().click()
     await page.keyboard.type('Test assessment note')
     
+    page.once('dialog', (dialog) => dialog.accept())
     await page.getByRole('button', { name: /Salvar|Save/ }).click()
 
     // Verify it appears in timeline

@@ -32,11 +32,11 @@ export const TOUR_DEMO_STUDENT = {
   school: TOUR_DEMO_SCHOOL,
   monthlyUpdateStatus: 'missing' as const,
   monthStatus: 'current' as const,
-  latestAssessmentDate: '2026-04-18T12:00:00.000Z',
+  latestAssessmentMonth: '04/2026',
   readingHistory: [
     {
       id: 'tour-demo-assessment-current',
-      recordedAt: '2026-04-18T12:00:00.000Z',
+      referenceMonth: '04/2026',
       createdAt: '2026-04-18T12:00:00.000Z',
       notes: '<p>Reconhece palavras frequentes e precisa praticar fluencia em frases curtas.</p>',
       userId: 'tour-demo-teacher',
@@ -50,7 +50,7 @@ export const TOUR_DEMO_STUDENT = {
     },
     {
       id: 'tour-demo-assessment-previous',
-      recordedAt: '2026-03-14T12:00:00.000Z',
+      referenceMonth: '03/2026',
       createdAt: '2026-03-14T12:00:00.000Z',
       notes: '<p>Identifica silabas com apoio visual.</p>',
       userId: 'tour-demo-teacher',
@@ -152,7 +152,7 @@ export const TOUR_DEMO_DASHBOARD_STATS = {
         level: 'Reads Words',
         levelCode: 'RW',
         classId: TOUR_DEMO_CLASS.id,
-        latestAssessmentDate: TOUR_DEMO_STUDENT.latestAssessmentDate,
+        latestAssessmentMonth: TOUR_DEMO_STUDENT.latestAssessmentMonth,
       },
     ],
   },

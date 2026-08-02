@@ -8,7 +8,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { ArrowLeft, TrendingUp, User, BookOpen, Trash2, BarChart2, Edit2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { getReadingLevelStyle } from '@/lib/reading-levels'
-import { getDefaultAssessmentDateForMonth, getMonthKey } from '@/lib/monthly-updates'
+import { formatLocalizedMonth, fromInputMonth, getMonthKey, parseReferenceMonth, toInputMonth } from '@/lib/monthly-updates'
 import { buildReadingLevelAxisLabels, buildStudentProgressChartData } from '@/lib/student-progress-chart'
 import { getLocalDateString, formatPayloadDate } from '@/lib/date-utils'
 import StudentProfileSkeleton from '@/components/skeletons/StudentProfileSkeleton'
@@ -51,7 +51,7 @@ interface ClassRecord {
 
 interface HistoryEntry {
   id: string
-  recordedAt: string
+  referenceMonth: string
   notes: string | null
   readingLevel: { id: string; code: string; name: string; order: number }
   userId: string
@@ -69,6 +69,11 @@ interface CommentaryEntry {
 type TimelineItem = 
   | (HistoryEntry & { type: 'history' })
   | (CommentaryEntry & { type: 'commentary' })
+
+function getTimelineTimestamp(item: TimelineItem): number {
+  if (item.type === 'commentary') return new Date(item.recordedAt).getTime()
+  return parseReferenceMonth(item.referenceMonth)?.getTime() || 0
+}
 
 interface StudentDetail {
   id: string
@@ -105,7 +110,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [updateLevel, setUpdateLevel] = useState({
     readingLevelId: '',
-    recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+    referenceMonth: getMonthKey(),
     notes: '',
   })
   
@@ -116,12 +121,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   // Edit states
   const [editingItem, setEditingItem] = useState<TimelineItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<TimelineItem | null>(null)
-  const [editHistoryData, setEditHistoryData] = useState({ readingLevelId: '', recordedAt: '', notes: '' })
+  const [editHistoryData, setEditHistoryData] = useState({ readingLevelId: '', referenceMonth: '', notes: '' })
   const [editCommentaryData, setEditCommentaryData] = useState({ commentary: '', recordedAt: '' })
   
   const [currentUser, setCurrentUser] = useState<{ id: string; role: string; isGlobalAdmin: boolean } | null>(null)
-
-  const maxAssessmentDate = getDefaultAssessmentDateForMonth(getMonthKey())
+  const maxAssessmentDate = getLocalDateString(new Date().toISOString())
 
   useEffect(() => {
     params.then(p => setStudentId(p.id))
@@ -133,7 +137,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       const combined: TimelineItem[] = [
         ...TOUR_DEMO_STUDENT.readingHistory.map((historyEntry) => ({ ...historyEntry, type: 'history' as const })),
         ...TOUR_DEMO_COMMENTARIES.map((commentary) => ({ ...commentary, type: 'commentary' as const })),
-      ].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+      ].sort((a, b) => getTimelineTimestamp(b) - getTimelineTimestamp(a))
 
       queueMicrotask(() => {
         setStudent(TOUR_DEMO_STUDENT)
@@ -173,7 +177,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         const combined: TimelineItem[] = [
           ...historyRes.data.history.map((h: HistoryEntry) => ({ ...h, type: 'history' as const })),
           ...historyRes.data.commentaries.map((c: CommentaryEntry) => ({ ...c, type: 'commentary' as const }))
-        ].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+        ].sort((a, b) => getTimelineTimestamp(b) - getTimelineTimestamp(a))
         setTimeline(combined)
       }
 
@@ -199,7 +203,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       const combined: TimelineItem[] = [
         ...historyRes.data.history.map((h: HistoryEntry) => ({ ...h, type: 'history' as const })),
         ...historyRes.data.commentaries.map((c: CommentaryEntry) => ({ ...c, type: 'commentary' as const }))
-      ].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+      ].sort((a, b) => getTimelineTimestamp(b) - getTimelineTimestamp(a))
       setTimeline(combined)
     }
   }
@@ -215,18 +219,23 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     const token = localStorage.getItem('token')
     if (!token || !updateLevel.readingLevelId) return
 
-    const res = await fetch('/api/students/update', {
+    const submitLevel = (confirmReplace = false) => fetch('/api/students/update', {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId, ...updateLevel }),
+      body: JSON.stringify({ studentId, ...updateLevel, confirmReplace }),
     })
+    let res = await submitLevel()
+    if (res.status === 409) {
+      if (!window.confirm(t('confirmReplaceMonth', { month: updateLevel.referenceMonth }))) return
+      res = await submitLevel(true)
+    }
 
     if (res.ok) {
       await refreshData()
       setShowUpdateModal(false)
       setUpdateLevel({
         readingLevelId: '',
-        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+        referenceMonth: getMonthKey(),
         notes: '',
       })
     }
@@ -262,14 +271,14 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
   const openEditModal = (item: TimelineItem) => {
     setEditingItem(item)
-    const localDate = getLocalDateString(item.recordedAt)
     if (item.type === 'history') {
       setEditHistoryData({
         readingLevelId: item.readingLevel.id || '',
-        recordedAt: localDate,
+        referenceMonth: item.referenceMonth,
         notes: item.notes || ''
       })
     } else {
+      const localDate = getLocalDateString(item.recordedAt)
       setEditCommentaryData({
         commentary: item.commentary,
         recordedAt: localDate
@@ -287,15 +296,20 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       ? `/api/students/${studentId}/history/${editingItem.id}`
       : `/api/students/${studentId}/commentaries/${editingItem.id}`
 
-    const body = editingItem.type === 'history' 
-      ? { ...editHistoryData, recordedAt: formatPayloadDate(editHistoryData.recordedAt, editingItem.recordedAt) } 
+    const body = editingItem.type === 'history'
+      ? editHistoryData
       : { ...editCommentaryData, recordedAt: formatPayloadDate(editCommentaryData.recordedAt, editingItem.recordedAt) }
 
-    const res = await fetch(endpoint, {
+    const submitEdit = (confirmReplace = false) => fetch(endpoint, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, confirmReplace }),
     })
+    let res = await submitEdit()
+    if (editingItem.type === 'history' && res.status === 409) {
+      if (!window.confirm(t('confirmReplaceMonth', { month: editHistoryData.referenceMonth }))) return
+      res = await submitEdit(true)
+    }
 
     if (res.ok) {
       await refreshData()
@@ -536,7 +550,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                           {t('commentary') || 'Comentário'}
                         </span>
                       )}
-                      <span className="text-xs text-gray-400">{formatDate(entry.recordedAt)}</span>
+                      <span className="text-xs text-gray-400">
+                        {entry.type === 'history'
+                          ? formatLocalizedMonth(entry.referenceMonth, locale)
+                          : formatDate(entry.recordedAt)}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-gray-500">
@@ -591,12 +609,12 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                 ))}
               </select>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">{t('assessmentDate')}</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('referenceMonth')}</label>
                 <input
-                  type="date"
-                  value={updateLevel.recordedAt}
-                  max={maxAssessmentDate}
-                  onChange={(e) => setUpdateLevel({ ...updateLevel, recordedAt: e.target.value })}
+                  type="month"
+                  value={toInputMonth(updateLevel.referenceMonth)}
+                  max={toInputMonth(getMonthKey())}
+                  onChange={(e) => setUpdateLevel({ ...updateLevel, referenceMonth: fromInputMonth(e.target.value) })}
                   className="w-full p-2 border border-gray-300 rounded"
                   required
                 />
@@ -644,12 +662,12 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
                     ))}
                   </select>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">{t('assessmentDate')}</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('referenceMonth')}</label>
                     <input
-                      type="date"
-                      value={editHistoryData.recordedAt}
-                      max={maxAssessmentDate}
-                      onChange={(e) => setEditHistoryData({ ...editHistoryData, recordedAt: e.target.value })}
+                      type="month"
+                      value={toInputMonth(editHistoryData.referenceMonth)}
+                      max={toInputMonth(getMonthKey())}
+                      onChange={(e) => setEditHistoryData({ ...editHistoryData, referenceMonth: fromInputMonth(e.target.value) })}
                       className="w-full p-2 border border-gray-300 rounded"
                       required
                     />

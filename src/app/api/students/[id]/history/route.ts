@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
+import { formatReferenceMonth } from '@/lib/monthly-updates'
 import { forbiddenResponse, hasSchoolAccess, isAuthFailure, requireAuth } from '@/lib/permissions'
+
+type AssessmentAuthor = {
+  name: string
+  isGlobalAdmin: boolean
+  schools: { role: string }[]
+}
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -37,7 +44,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         assessmentType: { code: READING_ASSESSMENT_TYPE_CODE },
       },
       orderBy: [
-        { recordedAt: 'desc' },
+        { referenceMonth: 'desc' },
         { createdAt: 'desc' },
       ],
       include: {
@@ -57,7 +64,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       },
     })
 
-    const mapTeacher = (user: any) => ({
+    const mapTeacher = (user: AssessmentAuthor) => ({
       name: user.name,
       role: user.isGlobalAdmin ? 'Admin' : (user.schools?.[0]?.role === 'COORDINATOR' ? 'Coordinator' : 'Teacher')
     })
@@ -66,11 +73,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       student,
       history: assessments.map((entry) => ({
         ...entry,
+        referenceMonth: formatReferenceMonth(entry.referenceMonth),
         readingLevelId: entry.assessmentLevelId,
         readingLevel: entry.assessmentLevel,
         teacher: mapTeacher(entry.user),
       })),
-      commentaries: commentaries.map((entry: any) => ({ ...entry, teacher: mapTeacher(entry.user) })),
+      commentaries: commentaries.map((entry) => ({ ...entry, teacher: mapTeacher(entry.user) })),
     })
   } catch (error) {
     console.error('Student history error:', error)

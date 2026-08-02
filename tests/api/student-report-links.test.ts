@@ -152,7 +152,7 @@ describe('public student parent reports', () => {
     vi.mocked(prisma.studentAssessment.findMany).mockResolvedValue([
       {
         id: 'history-1',
-        recordedAt: new Date('2026-05-03T12:00:00.000Z'),
+        referenceMonth: new Date(2026, 4, 1),
         notes: 'Good progress',
         assessmentLevel: { code: 'RW', name: 'Reads Words', order: 4 },
         user: { name: 'Teacher' },

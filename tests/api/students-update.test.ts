@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Use vi.hoisted to define mocks at the right time
-const { mockCreateHistory, mockFindReadingLevel, mockFindStudent, mockFindUser, mockFindUserSchool, mockVerifyToken } = vi.hoisted(() => ({
+const { mockCreateHistory, mockUpsertHistory, mockFindExisting, mockFindReadingLevel, mockFindStudent, mockFindUser, mockFindUserSchool, mockVerifyToken } = vi.hoisted(() => ({
   mockCreateHistory: vi.fn(),
+  mockUpsertHistory: vi.fn(),
+  mockFindExisting: vi.fn(),
   mockFindReadingLevel: vi.fn(),
   mockFindStudent: vi.fn(),
   mockFindUser: vi.fn(),
@@ -12,7 +14,7 @@ const { mockCreateHistory, mockFindReadingLevel, mockFindStudent, mockFindUser, 
 
 vi.mock('@/lib/db', () => ({
   prisma: {
-    studentAssessment: { create: mockCreateHistory },
+    studentAssessment: { create: mockCreateHistory, findUnique: mockFindExisting, upsert: mockUpsertHistory },
     user: { findUnique: mockFindUser },
     school: { findMany: vi.fn() },
     userSchool: { findMany: vi.fn(), findUnique: mockFindUserSchool },
@@ -60,6 +62,7 @@ describe('API: /api/students/update PATCH', () => {
       assessmentTypeId: 'assessment-type-reading',
       assessmentType: { id: 'assessment-type-reading', code: 'READING' },
     })
+    mockFindExisting.mockResolvedValue(null)
   })
 
   // Test 1: No token
@@ -147,6 +150,7 @@ describe('API: /api/students/update PATCH', () => {
       studentId: 'student-123', 
       assessmentLevelId: 'level-123',
       userId: 'teacher-123',
+      referenceMonth: new Date('2026-04-01T00:00:00.000Z'),
       notes: 'Good progress',
       assessmentLevel: { id: 'level-123', code: 'RW', order: 4 },
     })
@@ -161,7 +165,7 @@ describe('API: /api/students/update PATCH', () => {
         studentId: 'student-123', 
         readingLevelId: 'level-123',
         notes: 'Good progress',
-        recordedAt: '2026-04-10',
+        referenceMonth: '04/2026',
       }),
     })
 
@@ -171,16 +175,15 @@ describe('API: /api/students/update PATCH', () => {
     const data = await response.json()
     expect(data.history).toBeDefined()
     expect(data.history.id).toBe('history-1')
-    expect(mockCreateHistory).toHaveBeenCalledWith({
+    expect(mockCreateHistory).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         studentId: 'student-123',
         enrollmentId: 'enrollment-2026',
         assessmentTypeId: 'assessment-type-reading',
         assessmentLevelId: 'level-123',
-        recordedAt: new Date(2026, 3, 10),
+        referenceMonth: new Date('2026-04-01T00:00:00.000Z'),
       }),
-      include: { assessmentLevel: true },
-    })
+    }))
   })
 
   it('should reject levels outside the reading assessment type', async () => {
@@ -195,7 +198,7 @@ describe('API: /api/students/update PATCH', () => {
       body: JSON.stringify({
         studentId: 'student-123',
         readingLevelId: 'writing-level-123',
-        recordedAt: '2026-04-10',
+        referenceMonth: '04/2026',
       }),
     })
 
@@ -204,6 +207,31 @@ describe('API: /api/students/update PATCH', () => {
 
     expect(response.status).toBe(400)
     expect(data.error).toBe('Invalid reading level')
+    expect(mockCreateHistory).not.toHaveBeenCalled()
+  })
+
+  it('requires confirmation before replacing an existing monthly level', async () => {
+    mockFindExisting.mockResolvedValue({
+      id: 'existing-assessment',
+      assessmentLevelId: 'old-level',
+      referenceMonth: new Date(2026, 3, 1),
+      assessmentLevel: { id: 'old-level', code: 'SO' },
+    })
+
+    const request = new Request('http://localhost/api/students/update', {
+      method: 'PATCH',
+      headers: { authorization: 'Bearer valid-token', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        studentId: 'student-123',
+        readingLevelId: 'level-123',
+        referenceMonth: '04/2026',
+      }),
+    })
+
+    const response = await UpdateReadingLevel(request)
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toMatchObject({ code: 'MONTH_ALREADY_RECORDED' })
+    expect(mockUpsertHistory).not.toHaveBeenCalled()
     expect(mockCreateHistory).not.toHaveBeenCalled()
   })
 
@@ -220,14 +248,14 @@ describe('API: /api/students/update PATCH', () => {
       body: JSON.stringify({
         studentId: 'student-123',
         readingLevelId: 'level-123',
-        recordedAt: '2026-04-11',
+        referenceMonth: '05/2026',
       }),
     })
 
     const response = await UpdateReadingLevel(request)
     expect(response.status).toBe(400)
     const data = await response.json()
-    expect(data.error).toBe('Future assessment dates are not allowed')
+    expect(data.error).toBe('Future reference months are not allowed')
     expect(mockCreateHistory).not.toHaveBeenCalled()
   })
 
@@ -253,7 +281,7 @@ describe('API: /api/students/update PATCH', () => {
       body: JSON.stringify({
         studentId: 'student-123',
         readingLevelId: 'level-123',
-        recordedAt: '2025-04-10',
+        referenceMonth: '04/2025',
       }),
     })
 
@@ -277,7 +305,7 @@ describe('API: /api/students/update PATCH', () => {
       body: JSON.stringify({ 
         studentId: 'student-123', 
         readingLevelId: 'level-123',
-        recordedAt: '2026-04-10',
+        referenceMonth: '04/2026',
       }),
     })
 

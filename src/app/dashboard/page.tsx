@@ -61,7 +61,7 @@ interface Stats {
       schoolName: string
       level: string
       levelCode: string
-      latestAssessmentDate: string | null
+      latestAssessmentMonth: string | null
     }[]
   }
 }

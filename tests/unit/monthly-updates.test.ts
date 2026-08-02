@@ -3,8 +3,7 @@ import {
   fromInputMonth,
   buildMonthKey,
   getAvailableMonthOptions,
-  getLatestAssessmentDate,
-  getDefaultAssessmentDateForMonth,
+  getLatestAssessmentMonth,
   getMonthKey,
   getMonthPartFromMonthKey,
   getMonthRange,
@@ -14,6 +13,8 @@ import {
   resolveMonthInfo,
   resolveMonthKey,
   parseDateInput,
+  parseReferenceMonth,
+  formatReferenceMonth,
   toInputMonth,
 } from '@/lib/monthly-updates'
 
@@ -26,6 +27,12 @@ describe('monthly update helpers', () => {
   it('converts between MM/YYYY and HTML input format', () => {
     expect(toInputMonth('04/2026')).toBe('2026-04')
     expect(fromInputMonth('2026-04')).toBe('04/2026')
+  })
+
+  it('parses and formats persisted reference months', () => {
+    expect(parseReferenceMonth('04/2026')).toEqual(new Date('2026-04-01T00:00:00.000Z'))
+    expect(parseReferenceMonth('13/2026')).toBeNull()
+    expect(formatReferenceMonth(new Date('2026-04-01T00:00:00.000Z'))).toBe('04/2026')
   })
 
   it('builds month keys from split month and year filters', () => {
@@ -91,13 +98,6 @@ describe('monthly update helpers', () => {
     expect(future.monthStatus).toBe('current')
   })
 
-  it('chooses default assessment dates for current and past months', () => {
-    const now = new Date(2026, 3, 27)
-
-    expect(getDefaultAssessmentDateForMonth('04/2026', now)).toBe('2026-04-27')
-    expect(getDefaultAssessmentDateForMonth('02/2026', now)).toBe('2026-02-28')
-  })
-
   it('parses date input as a local calendar date', () => {
     expect(parseDateInput('2026-04-10')).toEqual(new Date(2026, 3, 10))
     expect(parseDateInput('2026-02-31')).toBeNull()
@@ -116,16 +116,14 @@ describe('monthly update helpers', () => {
   it('detects whether a student has a monthly reading update', () => {
     const range = getMonthRange('04/2026')
 
-    expect(hasMonthlyReadingUpdate([{ recordedAt: new Date(2026, 3, 12) }], range)).toBe(true)
-    expect(hasMonthlyReadingUpdate([{ recordedAt: new Date(2026, 2, 12) }], range)).toBe(false)
+    expect(hasMonthlyReadingUpdate([{ referenceMonth: '04/2026' }], range)).toBe(true)
+    expect(hasMonthlyReadingUpdate([{ referenceMonth: '03/2026' }], range)).toBe(false)
     expect(hasMonthlyReadingUpdate([], range)).toBe(false)
     expect(hasMonthlyReadingUpdate(undefined, range)).toBe(false)
   })
 
-  it('returns the latest assessment date as an ISO string', () => {
-    expect(getLatestAssessmentDate([{ recordedAt: new Date('2026-04-12T10:30:00.000Z') }])).toBe(
-      '2026-04-12T10:30:00.000Z'
-    )
-    expect(getLatestAssessmentDate([])).toBeNull()
+  it('returns the latest assessment month', () => {
+    expect(getLatestAssessmentMonth([{ referenceMonth: new Date('2026-04-01T00:00:00.000Z') }])).toBe('04/2026')
+    expect(getLatestAssessmentMonth([])).toBeNull()
   })
 })

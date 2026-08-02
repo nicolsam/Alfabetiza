@@ -150,7 +150,7 @@ async function seedMetricFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: levelByCode.SO.id,
       userId: teacher.id,
-      recordedAt: current,
+      referenceMonth: new Date(current.getFullYear(), current.getMonth(), 1),
     },
   })
   await prisma.studentAssessment.create({
@@ -161,7 +161,7 @@ async function seedMetricFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: levelByCode.RS.id,
       userId: teacher.id,
-      recordedAt: previous,
+      referenceMonth: new Date(previous.getFullYear(), previous.getMonth(), 1),
     },
   })
   await prisma.studentAssessment.create({
@@ -172,7 +172,7 @@ async function seedMetricFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: levelByCode.RW.id,
       userId: teacher.id,
-      recordedAt: previous,
+      referenceMonth: new Date(previous.getFullYear(), previous.getMonth(), 1),
     },
   })
   await prisma.studentAssessment.create({
@@ -183,7 +183,7 @@ async function seedMetricFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: levelByCode.RS.id,
       userId: teacher.id,
-      recordedAt: current,
+      referenceMonth: new Date(current.getFullYear(), current.getMonth(), 1),
     },
   })
   await prisma.studentAssessment.create({
@@ -194,7 +194,7 @@ async function seedMetricFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: levelByCode.RTF.id,
       userId: teacher.id,
-      recordedAt: current,
+      referenceMonth: new Date(current.getFullYear(), current.getMonth(), 1),
     },
   })
 }
@@ -216,6 +216,8 @@ test.describe('dashboard and students metric boxes', () => {
     await expect(page.getByTestId('dashboard-need-attention-count')).toHaveText('1')
     await expect(page.getByTestId('dashboard-missing-updates-count')).toHaveText('1')
     await expect(page.getByTestId('dashboard-improved-count')).toHaveText('1')
+    await expect(page.getByTestId('dashboard-pie-chart').getByText(/\d+%/).first()).toBeVisible()
+    await expect(page.getByTestId('dashboard-bar-chart').getByText(/\d+%/).first()).toBeVisible()
 
     await page.getByTestId('dashboard-need-attention-card').click()
     await expect(page).toHaveURL(/\/dashboard\/students\/need-attention/)

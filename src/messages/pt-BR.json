@@ -85,6 +85,8 @@
     "monthlyUpdatedPast": "Atualizado neste mês",
     "monthlyMissingPast": "Sem atualização registrada",
     "assessmentDate": "Data da avaliação",
+    "referenceMonth": "Mês de referência",
+    "confirmReplaceMonth": "Já existe um nível de leitura em {month}. Deseja substituí-lo por esta atualização?",
     "needAttention": "Precisam de Atenção",
     "missingMonthlyUpdates": "Atualizações Mensais Pendentes",
     "improved": "Alunos que Evoluíram",
@@ -139,6 +141,7 @@
     "importImporting": "Importando...",
     "importPreviewError": "Falha ao pré-visualizar importação",
     "importCommitError": "Falha ao importar alunos",
+    "confirmReplaceImport": "{count} nível(is) mensal(is) já existe(m). Deseja substituí-lo(s) pelos valores importados?",
     "importComplete": "{count} linhas de alunos importadas",
     "importTotalRows": "Total",
     "importReadyRows": "Prontas",
@@ -516,8 +519,8 @@
           "description": "Selecione o nível de leitura atual do aluno para esta avaliação."
         },
         "dateField": {
-          "title": "Confirme a data",
-          "description": "A data da avaliação define qual mês receberá a atualização."
+          "title": "Confirme o mês de referência",
+          "description": "O mês de referência define qual nível mensal será atualizado."
         },
         "actions": {
           "title": "Salvar ou cancelar",

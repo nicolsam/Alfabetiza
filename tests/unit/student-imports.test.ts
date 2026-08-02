@@ -32,13 +32,13 @@ describe('student imports', () => {
     expect(parseImportMonth('FEB', 2026, '01/2026', new Date(2026, 4, 26))).toMatchObject({
       ok: true,
       monthKey: '02/2026',
-      recordedAt: '2026-02-01',
+      referenceMonth: '02/2026',
     })
 
     expect(parseImportMonth('Março', 2026, '01/2026', new Date(2026, 4, 26))).toMatchObject({
       ok: true,
       monthKey: '03/2026',
-      recordedAt: '2026-03-01',
+      referenceMonth: '03/2026',
     })
   })
 
@@ -178,8 +178,8 @@ describe('student imports', () => {
         studentId: 'student-1',
         createdStudent: true,
         cells: [
-          { month: '02/2026', status: 'imported', message: '', readingLevelInput: 'RW', readingLevelId: 'level-rw', readingLevelCode: 'RW', assessmentTypeId: 'reading-type', recordedAt: '2026-02-01' },
-          { month: '03/2026', status: 'imported', message: '', readingLevelInput: 'RS', readingLevelId: 'level-rs', readingLevelCode: 'RS', assessmentTypeId: 'reading-type', recordedAt: '2026-03-01' },
+          { month: '02/2026', status: 'imported', message: '', readingLevelInput: 'RW', readingLevelId: 'level-rw', readingLevelCode: 'RW', assessmentTypeId: 'reading-type', referenceMonth: '02/2026' },
+          { month: '03/2026', status: 'imported', message: '', readingLevelInput: 'RS', readingLevelId: 'level-rs', readingLevelCode: 'RS', assessmentTypeId: 'reading-type', referenceMonth: '03/2026' },
         ],
       },
     ])

@@ -46,7 +46,7 @@ export type StudentImportCellResult = {
   readingLevelId: string | null
   readingLevelCode: string | null
   assessmentTypeId: string | null
-  recordedAt: string | null
+  referenceMonth: string | null
   assessmentId?: string
 }
 
@@ -78,7 +78,7 @@ export type StudentImportCommitResult = {
 }
 
 type MonthParseResult =
-  | { ok: true; month: number; monthKey: string; recordedAt: string }
+  | { ok: true; month: number; monthKey: string; referenceMonth: string }
   | { ok: false; message: string }
 
 type HeaderMapping = {
@@ -211,7 +211,7 @@ export function parseImportMonthKey(value: string, academicYear: number, now = n
     ok: true,
     month,
     monthKey: `${String(month).padStart(2, '0')}/${academicYear}`,
-    recordedAt: formatLocalDate(date),
+    referenceMonth: `${String(month).padStart(2, '0')}/${academicYear}`,
   }
 }
 
@@ -361,7 +361,7 @@ function buildValidatedCell(
       readingLevelId: null,
       readingLevelCode: null,
       assessmentTypeId: null,
-      recordedAt: null,
+      referenceMonth: null,
     }
   }
 
@@ -375,7 +375,7 @@ function buildValidatedCell(
       readingLevelId: null,
       readingLevelCode: null,
       assessmentTypeId: null,
-      recordedAt: parsedMonth.recordedAt,
+      referenceMonth: parsedMonth.referenceMonth,
     }
   }
 
@@ -387,7 +387,7 @@ function buildValidatedCell(
     readingLevelId: level.id,
     readingLevelCode: level.code,
     assessmentTypeId: level.assessmentTypeId,
-    recordedAt: parsedMonth.recordedAt,
+    referenceMonth: parsedMonth.referenceMonth,
   }
 }
 
@@ -547,13 +547,6 @@ function getExplicitYear(value: string): number | null {
 function toMonthNumber(value: string): number | null {
   const month = Number(value)
   return Number.isInteger(month) && month >= 1 && month <= 12 ? month : null
-}
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 const MONTH_ALIASES = new Map<string, number>([

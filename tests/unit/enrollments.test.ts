@@ -4,6 +4,7 @@ import {
   getAcademicYearStartDate,
   getCurrentEnrollment,
   getEnrollmentForDate,
+  getEnrollmentForMonth,
   parseAcademicYear,
 } from '@/lib/enrollments'
 
@@ -42,6 +43,19 @@ describe('enrollment helpers', () => {
     expect(getEnrollmentForDate(enrollments, new Date(2023, 3, 10))?.id).toBe('enrollment-2023')
     expect(getEnrollmentForDate(enrollments, new Date(2024, 3, 10))?.id).toBe('enrollment-2024')
     expect(getEnrollmentForDate(enrollments, new Date(2025, 3, 10))).toBeNull()
+  })
+
+  it('finds an enrollment that overlaps any part of the reference month', () => {
+    const midMonthEnrollment = [{
+      id: 'mid-month',
+      startedAt: new Date(2026, 3, 15),
+      endedAt: null,
+      deletedAt: null,
+      class: { academicYear: 2026 },
+    }]
+
+    expect(getEnrollmentForMonth(midMonthEnrollment, new Date(2026, 3, 1))?.id).toBe('mid-month')
+    expect(getEnrollmentForMonth(midMonthEnrollment, new Date(2026, 2, 1))).toBeNull()
   })
 
   it('chooses the newest active enrollment as current', () => {

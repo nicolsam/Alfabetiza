@@ -1,8 +1,6 @@
 import { isAttentionAssessmentLevel } from '@/lib/assessments'
-import { getMonthRange } from '@/lib/monthly-updates'
-
 export interface StudentMetricReadingHistoryEntry {
-  recordedAt?: Date | string | null
+  referenceMonth?: string | null
   createdAt?: Date | string | null
   readingLevel: {
     code?: string | null
@@ -33,11 +31,11 @@ function sortReadingHistory(
   readingHistory: StudentMetricReadingHistoryEntry[] | undefined
 ): StudentMetricReadingHistoryEntry[] {
   return [...(readingHistory || [])].sort((left, right) => {
-    const leftRecordedAt = toTimestamp(left.recordedAt) || 0
-    const rightRecordedAt = toTimestamp(right.recordedAt) || 0
+    const leftRecordedAt = left.referenceMonth || ''
+    const rightRecordedAt = right.referenceMonth || ''
 
     if (leftRecordedAt !== rightRecordedAt) {
-      return rightRecordedAt - leftRecordedAt
+      return rightRecordedAt.localeCompare(leftRecordedAt)
     }
 
     return (toTimestamp(right.createdAt) || 0) - (toTimestamp(left.createdAt) || 0)
@@ -55,15 +53,10 @@ export function countStudentsMissingMonthlyUpdates(students: StudentMetricRecord
 }
 
 export function hasImprovedInMonth(student: StudentMetricRecord, month: string): boolean {
-  const { start, end } = getMonthRange(month)
   const history = sortReadingHistory(student.readingHistory)
 
   return history.some((current, index) => {
-    const currentRecordedAt = toTimestamp(current.recordedAt)
-    if (!currentRecordedAt) return false
-
-    const currentDate = new Date(currentRecordedAt)
-    if (currentDate < start || currentDate >= end) return false
+    if (current.referenceMonth !== month) return false
 
     const previous = history[index + 1]
     return !!previous && current.readingLevel.order > previous.readingLevel.order

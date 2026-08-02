@@ -1,6 +1,6 @@
 'use client'
 
-import { Bar, BarChart, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getReadingLevelStyle } from '@/lib/reading-levels'
 
 type DistributionItem = {
@@ -9,6 +9,11 @@ type DistributionItem = {
   count: number
   percentage: number
   translatedName: string
+}
+
+function formatPercentage(value: unknown): string {
+  const percentage = Number(value)
+  return percentage > 0 ? `${percentage}%` : ''
 }
 
 export default function DashboardCharts({
@@ -24,7 +29,7 @@ export default function DashboardCharts({
 }) {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-white p-6 shadow" data-testid="dashboard-pie-chart">
         <h3 className="mb-4 text-lg font-semibold text-gray-800">{distributionTitle}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -34,27 +39,37 @@ export default function DashboardCharts({
               nameKey="translatedName"
               cx="50%"
               cy="50%"
-              outerRadius={100}
+              outerRadius={90}
+              label={{ dataKey: 'percentage', formatter: formatPercentage, position: 'outside' }}
+              labelLine
             >
               {distribution.map((item) => (
                 <Cell key={item.level} fill={getReadingLevelStyle(item.level).color} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip formatter={(value, name, item) => [
+              `${value} (${item.payload.percentage}%)`,
+              name,
+            ]} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-white p-6 shadow" data-testid="dashboard-bar-chart">
         <h3 className="mb-4 text-lg font-semibold text-gray-800">{byLevelTitle}</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={distribution} layout="vertical">
+          <BarChart data={distribution} layout="vertical" margin={{ right: 42 }}>
             <XAxis type="number" allowDecimals={false} />
             <YAxis type="category" dataKey="translatedName" width={120} />
-            <Tooltip formatter={(value: any) => [value, studentLabel]} />
+            <Tooltip formatter={(value, _name, item) => [
+              `${value} (${item.payload.percentage}%)`,
+              studentLabel,
+            ]} />
             <Legend />
-            <Bar dataKey="count" fill="#3B82F6" name={studentLabel} />
+            <Bar dataKey="count" fill="#3B82F6" name={studentLabel}>
+              <LabelList dataKey="percentage" position="right" formatter={formatPercentage} />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

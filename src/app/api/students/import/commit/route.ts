@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 import { READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/db'
 import { getAcademicYearStartDate } from '@/lib/enrollments'
-import { parseDateInput } from '@/lib/monthly-updates'
+import { formatReferenceMonth, parseReferenceMonth } from '@/lib/monthly-updates'
 import { forbiddenResponse, isAuthFailure, isCoordinatorForSchool, requireAuth } from '@/lib/permissions'
 import {
   MAX_STUDENT_IMPORT_ROWS,
@@ -22,6 +22,7 @@ type ExistingStudentWithEnrollments = {
   studentNumber: string
   schoolId: string
   enrollments: { id: string; classId: string }[]
+  assessments: { id: string; assessmentTypeId: string; referenceMonth: Date }[]
 }
 
 type PersistedStudent = {
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
     const selectedClassId = readStringField(body, 'selectedClassId')
     const months = parseMonths(body?.months)
     const rows = parseGridRows(body?.rows)
+    const confirmReplace = body?.confirmReplace === true
 
     if (!selectedClassId || months.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -90,6 +92,10 @@ export async function POST(request: Request) {
             select: { id: true, classId: true },
             orderBy: { startedAt: 'desc' },
           },
+          assessments: {
+            where: { assessmentType: { code: READING_ASSESSMENT_TYPE_CODE } },
+            select: { id: true, assessmentTypeId: true, referenceMonth: true },
+          },
         },
       }),
     ])
@@ -102,6 +108,15 @@ export async function POST(request: Request) {
       existingStudents,
     })
 
+    const conflicts = findImportConflicts(validated.rows, existingStudents as ExistingStudentWithEnrollments[])
+    if (conflicts.length > 0 && !confirmReplace) {
+      return NextResponse.json({
+        error: 'One or more levels are already recorded for the selected months.',
+        code: 'MONTH_ALREADY_RECORDED',
+        conflicts,
+      }, { status: 409 })
+    }
+
     const importedRows = await prisma.$transaction(
       (transaction) => persistStudentImportRows({
         rows: validated.rows,
@@ -109,6 +124,11 @@ export async function POST(request: Request) {
         existingStudents: existingStudents as ExistingStudentWithEnrollments[],
         userId: auth.user.id,
         transaction,
+        confirmReplace,
+        existingAssessmentIdsByCell: new Map(conflicts.map((conflict) => [
+          getCellKey(conflict.rowId, conflict.month),
+          conflict.assessmentId,
+        ])),
       }),
       { timeout: 20000 }
     )
@@ -135,6 +155,12 @@ export async function POST(request: Request) {
     if (error instanceof StudentImportCommitError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({
+        error: 'One or more levels are already recorded for the selected months.',
+        code: 'MONTH_ALREADY_RECORDED',
+      }, { status: 409 })
+    }
 
     console.error('Student import commit error:', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
@@ -147,6 +173,8 @@ async function persistStudentImportRows(input: {
   existingStudents: ExistingStudentWithEnrollments[]
   userId: string
   transaction: ImportTransaction
+  confirmReplace: boolean
+  existingAssessmentIdsByCell: Map<string, string>
 }): Promise<StudentImportRowResult[]> {
   const existingByMatricula = new Map(input.existingStudents.map((student) => [student.studentNumber, student]))
   const persistedByMatricula = buildPersistedStudentMap(input.rows, existingByMatricula)
@@ -171,9 +199,28 @@ async function persistStudentImportRows(input: {
     persistedByMatricula,
     enrollmentIdByStudentId,
     input.userId,
-    assessmentIdsByCell
+    assessmentIdsByCell,
+    input.existingAssessmentIdsByCell
   )
-  if (assessmentsToCreate.length > 0) await input.transaction.studentAssessment.createMany({ data: assessmentsToCreate })
+  if (input.confirmReplace) {
+    await Promise.all(assessmentsToCreate.map((assessment) => input.transaction.studentAssessment.upsert({
+      where: {
+        studentId_assessmentTypeId_referenceMonth: {
+          studentId: assessment.studentId,
+          assessmentTypeId: assessment.assessmentTypeId,
+          referenceMonth: assessment.referenceMonth,
+        },
+      },
+      create: assessment,
+      update: {
+        enrollmentId: assessment.enrollmentId,
+        assessmentLevelId: assessment.assessmentLevelId,
+        userId: assessment.userId,
+      },
+    })))
+  } else if (assessmentsToCreate.length > 0) {
+    await input.transaction.studentAssessment.createMany({ data: assessmentsToCreate })
+  }
 
   return input.rows.map((row) => addPersistedIdsToRow(row, persistedByMatricula, assessmentIdsByCell))
 }
@@ -251,17 +298,18 @@ function buildAssessmentsToCreate(
   persistedByMatricula: Map<string, PersistedStudent>,
   enrollmentIdByStudentId: Map<string, string>,
   userId: string,
-  assessmentIdsByCell: Map<string, string>
+  assessmentIdsByCell: Map<string, string>,
+  existingAssessmentIdsByCell: Map<string, string>
 ): Prisma.StudentAssessmentCreateManyInput[] {
   return rows.filter(isImportedRow).flatMap((row) => {
     const student = getPersistedStudent(row, persistedByMatricula)
     const enrollmentId = getEnrollmentId(student.id, enrollmentIdByStudentId)
 
     return row.cells.filter(isImportedCell).map((cell) => {
-      const recordedAt = parseDateInput(cell.recordedAt)
-      if (!recordedAt) throw new Error(`Invalid generated assessment date: ${cell.recordedAt}`)
+      const referenceMonth = parseReferenceMonth(cell.referenceMonth)
+      if (!referenceMonth) throw new Error(`Invalid generated reference month: ${cell.referenceMonth}`)
 
-      const id = randomUUID()
+      const id = existingAssessmentIdsByCell.get(getCellKey(row.rowId, cell.month)) || randomUUID()
       assessmentIdsByCell.set(getCellKey(row.rowId, cell.month), id)
       return {
         id,
@@ -270,7 +318,7 @@ function buildAssessmentsToCreate(
         assessmentTypeId: cell.assessmentTypeId,
         assessmentLevelId: cell.readingLevelId,
         userId,
-        recordedAt,
+        referenceMonth,
       }
     })
   })
@@ -323,9 +371,27 @@ function isImportedCell(
   status: 'imported'
   readingLevelId: string
   assessmentTypeId: string
-  recordedAt: string
+  referenceMonth: string
 } {
-  return cell.status === 'imported' && Boolean(cell.readingLevelId && cell.assessmentTypeId && cell.recordedAt)
+  return cell.status === 'imported' && Boolean(cell.readingLevelId && cell.assessmentTypeId && cell.referenceMonth)
+}
+
+function findImportConflicts(
+  rows: StudentImportRowResult[],
+  students: ExistingStudentWithEnrollments[]
+) {
+  const assessmentsByStudent = new Map(students.map((student) => [student.id, student.assessments]))
+
+  return rows.flatMap((row) => row.cells.flatMap((cell) => {
+    if (!row.studentId || !isImportedCell(cell)) return []
+    const referenceMonth = parseReferenceMonth(cell.referenceMonth)
+    if (!referenceMonth) return []
+    const existing = assessmentsByStudent.get(row.studentId)?.find((assessment) => (
+      assessment.assessmentTypeId === cell.assessmentTypeId &&
+      formatReferenceMonth(assessment.referenceMonth) === cell.referenceMonth
+    ))
+    return existing ? [{ rowId: row.rowId, month: cell.month, assessmentId: existing.id }] : []
+  }))
 }
 
 class StudentImportCommitError extends Error {

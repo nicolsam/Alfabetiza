@@ -42,7 +42,7 @@ vi.mock('@/lib/db', () => ({
       createMany: mockCreateStudents,
     },
     studentEnrollment: { createMany: mockCreateEnrollments },
-    studentAssessment: { createMany: mockCreateAssessments },
+    studentAssessment: { createMany: mockCreateAssessments, upsert: mockCreateAssessments },
     $transaction: mockTransaction,
   },
 }))
@@ -96,7 +96,7 @@ describe('API: /api/students/import/commit', () => {
     mockTransaction.mockImplementation(async (callback) => callback({
       student: { createMany: mockCreateStudents },
       studentEnrollment: { createMany: mockCreateEnrollments },
-      studentAssessment: { createMany: mockCreateAssessments },
+      studentAssessment: { createMany: mockCreateAssessments, upsert: mockCreateAssessments },
     }))
   })
 
@@ -145,13 +145,13 @@ describe('API: /api/students/import/commit', () => {
           studentId: data.rows[0].studentId,
           assessmentLevelId: 'level-rw',
           assessmentTypeId: 'type-reading',
-          recordedAt: new Date(2026, 1, 1),
+          referenceMonth: new Date('2026-02-01T00:00:00.000Z'),
         }),
         expect.objectContaining({
           id: data.rows[0].cells[1].assessmentId,
           studentId: data.rows[0].studentId,
           assessmentLevelId: 'level-rs',
-          recordedAt: new Date(2026, 2, 1),
+          referenceMonth: new Date('2026-03-01T00:00:00.000Z'),
         }),
       ],
     })
@@ -225,13 +225,40 @@ describe('API: /api/students/import/commit', () => {
     expect(mockCreateStudents).not.toHaveBeenCalled()
     expect(mockCreateEnrollments).not.toHaveBeenCalled()
     expect(mockCreateAssessments).toHaveBeenCalledWith({
-      data: [
-        expect.objectContaining({
+      data: [expect.objectContaining({
           studentId: 'student-existing',
           enrollmentId: 'enrollment-existing',
-        }),
-      ],
+      })],
     })
+  })
+
+  it('requires confirmation before replacing imported monthly levels', async () => {
+    mockFindStudents.mockResolvedValue([{
+      id: 'student-existing',
+      name: 'Ana',
+      studentNumber: 'MAT-1',
+      schoolId: 'school-1',
+      enrollments: [{ id: 'enrollment-existing', classId: 'class-1' }],
+      assessments: [{
+        id: 'assessment-existing',
+        assessmentTypeId: 'type-reading',
+        referenceMonth: new Date('2026-02-01T00:00:00.000Z'),
+      }],
+    }])
+    const body = {
+      months: ['02/2026'],
+      rows: [{ rowId: 'row-1', matricula: 'MAT-1', name: 'Ana', levelsByMonth: { '02/2026': 'RW' } }],
+    }
+
+    const conflict = await commitImport(createCommitRequest(body))
+    expect(conflict.status).toBe(409)
+    await expect(conflict.json()).resolves.toMatchObject({ code: 'MONTH_ALREADY_RECORDED' })
+
+    const confirmed = await commitImport(createCommitRequest({ ...body, confirmReplace: true }))
+    expect(confirmed.status).toBe(200)
+    expect(mockCreateAssessments).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({ assessmentLevelId: 'level-rw' }),
+    }))
   })
 
   it('creates an enrollment for an existing student without one in the selected class', async () => {

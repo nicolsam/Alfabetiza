@@ -3,7 +3,8 @@ import { prisma } from '@/lib/db'
 import { isAttentionAssessmentLevel, READING_ASSESSMENT_TYPE_CODE } from '@/lib/assessments'
 import { getAccessibleSchoolIds, isAuthFailure, requireAuth } from '@/lib/permissions'
 import {
-  getLatestAssessmentDate,
+  formatReferenceMonth,
+  getLatestAssessmentMonth,
   getYearFromMonthKey,
   hasMonthlyReadingUpdate,
   resolveMonthInfo,
@@ -80,7 +81,7 @@ export async function GET(request: Request) {
         assessments: {
           where: { assessmentType: { code: READING_ASSESSMENT_TYPE_CODE } },
           orderBy: [
-            { recordedAt: 'desc' },
+            { referenceMonth: 'desc' },
             { createdAt: 'desc' },
           ],
           include: { assessmentLevel: true },
@@ -93,6 +94,7 @@ export async function GET(request: Request) {
       ...student,
       readingHistory: (student.assessments || []).map((assessment) => ({
         ...assessment,
+        referenceMonth: formatReferenceMonth(assessment.referenceMonth),
         readingLevelId: assessment.assessmentLevelId,
         readingLevel: assessment.assessmentLevel,
       })),
@@ -140,7 +142,7 @@ export async function GET(request: Request) {
         schoolName: s.enrollments?.[0]?.class.school.name || s.school.name,
         level: s.readingHistory[0]?.readingLevel.name || 'Not assessed',
         levelCode: s.readingHistory[0]?.readingLevel.code || 'N/A',
-        latestAssessmentDate: getLatestAssessmentDate(s.readingHistory),
+        latestAssessmentMonth: getLatestAssessmentMonth(s.readingHistory),
       }))
 
     // Most common level
@@ -151,21 +153,14 @@ export async function GET(request: Request) {
       .filter((student) => {
         const history = student.readingHistory
         // Find all assessments that happened in the selected month
-        const assessmentsInMonth = history.filter(entry => 
-          new Date(entry.recordedAt) >= selectedMonthRange.start &&
-          new Date(entry.recordedAt) < selectedMonthRange.end
-        )
+        const assessmentsInMonth = history.filter(entry => entry.referenceMonth === selectedMonth)
         
         if (assessmentsInMonth.length === 0) return false
 
         // For each assessment in the month, check if it's an improvement over the one before it
         return assessmentsInMonth.some(current => {
           // Find the assessment immediately preceding this one
-          const previous = history.find(entry => 
-            new Date(entry.recordedAt) < new Date(current.recordedAt) ||
-            (new Date(entry.recordedAt).getTime() === new Date(current.recordedAt).getTime() && 
-             new Date(entry.createdAt) < new Date(current.createdAt))
-          )
+          const previous = history.find(entry => entry.referenceMonth < current.referenceMonth)
           
           return previous && current.readingLevel.order > previous.readingLevel.order
         })
@@ -178,7 +173,7 @@ export async function GET(request: Request) {
         schoolName: s.enrollments?.[0]?.class.school.name || s.school.name,
         level: s.readingHistory[0]?.readingLevel.name || 'Not assessed',
         levelCode: s.readingHistory[0]?.readingLevel.code || 'N/A',
-        latestAssessmentDate: getLatestAssessmentDate(s.readingHistory),
+        latestAssessmentMonth: getLatestAssessmentMonth(s.readingHistory),
       }))
 
     return NextResponse.json({

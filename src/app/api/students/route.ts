@@ -9,7 +9,8 @@ import { normalizeStudentContactInputs } from '@/lib/student-contacts'
 import { buildPaginationMeta, hasPaginationParams, parsePaginationParams } from '@/lib/pagination'
 import { getAccentInsensitiveSearchTokens } from '@/lib/server-search'
 import {
-  getLatestAssessmentDate,
+  formatReferenceMonth,
+  getLatestAssessmentMonth,
   getYearFromMonthKey,
   hasMonthlyReadingUpdate,
   resolveMonthInfo,
@@ -106,7 +107,7 @@ export async function GET(request: Request) {
         assessments: {
           where: { assessmentType: { code: READING_ASSESSMENT_TYPE_CODE } },
           orderBy: [
-            { recordedAt: 'desc' },
+            { referenceMonth: 'desc' },
             { createdAt: 'desc' },
           ],
           include: { assessmentLevel: true },
@@ -118,6 +119,7 @@ export async function GET(request: Request) {
       ...student,
       readingHistory: (student.assessments || []).map((assessment) => ({
         ...assessment,
+        referenceMonth: formatReferenceMonth(assessment.referenceMonth),
         readingLevelId: assessment.assessmentLevelId,
         readingLevel: assessment.assessmentLevel,
       })),
@@ -135,7 +137,7 @@ export async function GET(request: Request) {
           : 'missing',
         monthStatus,
         selectedMonth,
-        latestAssessmentDate: getLatestAssessmentDate(student.readingHistory),
+        latestAssessmentMonth: getLatestAssessmentMonth(student.readingHistory),
       }
     })
 

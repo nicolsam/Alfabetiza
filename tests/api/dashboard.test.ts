@@ -36,7 +36,7 @@ const levels = [
   { id: 'level-rtf', code: 'RTF', name: 'Reads Text Fluently', order: 7, isAttention: false },
 ]
 
-function createStudent(id: string, code: string, recordedAt = new Date('2026-04-10T12:00:00.000Z')) {
+function createStudent(id: string, code: string, referenceMonth = new Date(2026, 3, 1)) {
   const level = levels.find((item) => item.code === code)!
 
   return {
@@ -51,23 +51,23 @@ function createStudent(id: string, code: string, recordedAt = new Date('2026-04-
         school: { name: 'Test School' },
       },
     }],
-    assessments: [{ assessmentLevelId: level.id, assessmentLevel: level, recordedAt }],
+    assessments: [{ assessmentLevelId: level.id, assessmentLevel: level, referenceMonth }],
   }
 }
 
 function createStudentWithHistory(
   id: string,
-  history: { code: string; recordedAt: Date; createdAt?: Date }[]
+  history: { code: string; referenceMonth: Date; createdAt?: Date }[]
 ) {
   return {
-    ...createStudent(id, history[0].code, history[0].recordedAt),
+    ...createStudent(id, history[0].code, history[0].referenceMonth),
     assessments: history.map((entry) => {
       const level = levels.find((item) => item.code === entry.code)!
       return {
         assessmentLevelId: level.id,
         assessmentLevel: level,
-        recordedAt: entry.recordedAt,
-        createdAt: entry.createdAt || entry.recordedAt,
+        referenceMonth: entry.referenceMonth,
+        createdAt: entry.createdAt || entry.referenceMonth,
       }
     }),
   }
@@ -153,12 +153,12 @@ describe('API: /api/dashboard GET', () => {
   it('returns improved students and matching improved counts for the selected month', async () => {
     mockFindStudents.mockResolvedValue([
       createStudentWithHistory('student-improved', [
-        { code: 'RS', recordedAt: new Date('2026-04-10T12:00:00.000Z') },
-        { code: 'RW', recordedAt: new Date('2026-03-10T12:00:00.000Z') },
+        { code: 'RS', referenceMonth: new Date(2026, 3, 1) },
+        { code: 'RW', referenceMonth: new Date(2026, 2, 1) },
       ]),
       createStudentWithHistory('student-same-level', [
-        { code: 'RW', recordedAt: new Date('2026-04-10T12:00:00.000Z') },
-        { code: 'RW', recordedAt: new Date('2026-03-10T12:00:00.000Z') },
+        { code: 'RW', referenceMonth: new Date(2026, 3, 1) },
+        { code: 'RW', referenceMonth: new Date(2026, 2, 1) },
       ]),
     ])
 

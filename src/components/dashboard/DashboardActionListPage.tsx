@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -33,11 +33,13 @@ import { ACADEMIC_YEARS } from '@/lib/academic-years'
 import {
   buildMonthKey,
   getAvailableMonthOptions,
-  getDefaultAssessmentDateForMonth,
+  fromInputMonth,
+  formatLocalizedMonth,
   getMonthKey,
   getMonthPartFromMonthKey,
   getYearFromMonthKey,
   resolveMonthKey,
+  toInputMonth,
 } from '@/lib/monthly-updates'
 import { getReadingLevelStyle } from '@/lib/reading-levels'
 import { cachedJson, clearClientGetCache } from '@/lib/client-get-cache'
@@ -65,7 +67,7 @@ interface AttentionStudent {
 }
 
 interface MissingUpdateStudent extends AttentionStudent {
-  latestAssessmentDate: string | null
+  latestAssessmentMonth: string | null
 }
 
 interface ClassRecord {
@@ -108,6 +110,7 @@ export default function DashboardActionListPage({
 }: DashboardActionListPageProps) {
   const router = useRouter()
   const t = useTranslations()
+  const locale = useLocale()
   const activeDemoTour = useTourDemoMode()
   const initialResolvedMonth = resolveMonthKey(initialMonth)
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -128,14 +131,13 @@ export default function DashboardActionListPage({
     studentId: '',
     readingLevelId: '',
     notes: '',
-    recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+    referenceMonth: getMonthKey(),
   })
   const canManageStudents = canManageSchoolScopedRecords(user)
 
   const selectedMonthPart = getMonthPartFromMonthKey(selectedMonth)
   const selectedAcademicYear = Number(selectedYear)
   const availableMonths = getAvailableMonthOptions(selectedAcademicYear)
-  const maxAssessmentDate = getDefaultAssessmentDateForMonth(getMonthKey())
   const isNeedAttention = kind === 'need-attention'
   const isImproved = kind === 'improved'
   const title = isNeedAttention
@@ -299,7 +301,7 @@ export default function DashboardActionListPage({
         studentId: '',
         readingLevelId: '',
         notes: '',
-        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+        referenceMonth: getMonthKey(),
       })
       toast.info(t('tours.demoNoSave'))
       return
@@ -313,11 +315,16 @@ export default function DashboardActionListPage({
       return
     }
 
-    const res = await fetch('/api/students/update', {
+    const submitLevel = (confirmReplace = false) => fetch('/api/students/update', {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(updateLevel),
+      body: JSON.stringify({ ...updateLevel, confirmReplace }),
     })
+    let res = await submitLevel()
+    if (res.status === 409) {
+      if (!window.confirm(t('students.confirmReplaceMonth', { month: updateLevel.referenceMonth }))) return
+      res = await submitLevel(true)
+    }
 
     if (res.ok) {
       clearClientGetCache('/api/students')
@@ -326,7 +333,7 @@ export default function DashboardActionListPage({
         studentId: '',
         readingLevelId: '',
         notes: '',
-        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+        referenceMonth: getMonthKey(),
       })
       await fetchData(true)
     } else {
@@ -470,8 +477,8 @@ export default function DashboardActionListPage({
                       </td>
                       {(!isNeedAttention && !isImproved) && (
                         <td className="p-4 text-gray-800">
-                          {(student as MissingUpdateStudent).latestAssessmentDate
-                            ? new Date((student as MissingUpdateStudent).latestAssessmentDate!).toLocaleDateString()
+                          {(student as MissingUpdateStudent).latestAssessmentMonth
+                            ? formatLocalizedMonth((student as MissingUpdateStudent).latestAssessmentMonth!, locale)
                             : t('students.notAssessed')}
                         </td>
                       )}
@@ -487,7 +494,7 @@ export default function DashboardActionListPage({
                                 studentId: student.id,
                                 readingLevelId: '',
                                 notes: '',
-                                recordedAt: getDefaultAssessmentDateForMonth(selectedMonth),
+                                referenceMonth: selectedMonth,
                               })
                             }}
                             className="h-auto p-0 text-blue-600"
@@ -604,12 +611,12 @@ export default function DashboardActionListPage({
                 rows={3}
               />
               <div className="space-y-1">
-                <Label>{t('students.assessmentDate')}</Label>
+                <Label>{t('students.referenceMonth')}</Label>
                 <Input
-                  type="date"
-                  value={updateLevel.recordedAt}
-                  max={maxAssessmentDate}
-                  onChange={(e) => setUpdateLevel({ ...updateLevel, recordedAt: e.target.value })}
+                  type="month"
+                  value={toInputMonth(updateLevel.referenceMonth)}
+                  max={toInputMonth(getMonthKey())}
+                  onChange={(e) => setUpdateLevel({ ...updateLevel, referenceMonth: fromInputMonth(e.target.value) })}
                   required
                 />
               </div>
@@ -621,7 +628,7 @@ export default function DashboardActionListPage({
                   type="button"
                   variant="outline"
                   data-tour="assessment-cancel"
-                  onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })}
+                  onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', referenceMonth: getMonthKey() })}
                   className="flex-1"
                 >
                   {t('common.cancel')}

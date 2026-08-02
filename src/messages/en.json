@@ -91,6 +91,8 @@
     "monthlyUpdatedPast": "Updated in this month",
     "monthlyMissingPast": "No update recorded",
     "assessmentDate": "Assessment date",
+    "referenceMonth": "Reference month",
+    "confirmReplaceMonth": "A reading level already exists for {month}. Replace it with this update?",
     "needAttention": "Need Attention",
     "missingMonthlyUpdates": "Missing Monthly Updates",
     "improved": "Students who Improved",
@@ -145,6 +147,7 @@
     "importImporting": "Importing...",
     "importPreviewError": "Failed to preview import",
     "importCommitError": "Failed to import students",
+    "confirmReplaceImport": "{count} monthly level(s) already exist. Replace them with the imported values?",
     "importComplete": "Imported {count} student rows",
     "importTotalRows": "Total rows",
     "importReadyRows": "Ready",
@@ -514,8 +517,8 @@
           "description": "Select the student's current reading level for this assessment."
         },
         "dateField": {
-          "title": "Confirm the date",
-          "description": "The assessment date controls which month receives the update."
+          "title": "Confirm the reference month",
+          "description": "The reference month controls which monthly level is updated."
         },
         "actions": {
           "title": "Save or cancel",

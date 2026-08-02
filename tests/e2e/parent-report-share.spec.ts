@@ -90,7 +90,7 @@ async function seedFixtures() {
       assessmentTypeId: readingType.id,
       assessmentLevelId: level.id,
       userId: teacher.id,
-      recordedAt: new Date('2026-05-03T12:00:00.000Z'),
+      referenceMonth: new Date(2026, 4, 1),
       notes: 'E2E report note',
     },
   })

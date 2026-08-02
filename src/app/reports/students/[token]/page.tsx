@@ -26,6 +26,14 @@ function formatDate(date: Date, locale: string): string {
   })
 }
 
+function formatMonth(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale === 'pt-BR' ? 'pt-BR' : 'en-US', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
 export default async function StudentParentReportPage({ params }: ReportPageProps) {
   await connection()
   const { token } = await params
@@ -56,7 +64,11 @@ export default async function StudentParentReportPage({ params }: ReportPageProp
   const timeline = [
     ...report.history.map((h) => ({ ...h, type: 'history' as const })),
     ...report.commentaries.map((c) => ({ ...c, type: 'commentary' as const }))
-  ].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime())
+  ].sort((a, b) => {
+    const rightDate = b.type === 'history' ? b.referenceMonth : b.recordedAt
+    const leftDate = a.type === 'history' ? a.referenceMonth : a.recordedAt
+    return new Date(rightDate).getTime() - new Date(leftDate).getTime()
+  })
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8">
@@ -142,7 +154,11 @@ export default async function StudentParentReportPage({ params }: ReportPageProp
                           {locale === 'pt-BR' ? 'Comentário' : 'Commentary'}
                         </span>
                       )}
-                      <span className="text-sm text-gray-500">{formatDate(entry.recordedAt, locale)}</span>
+                      <span className="text-sm text-gray-500">
+                        {entry.type === 'history'
+                          ? formatMonth(entry.referenceMonth, locale)
+                          : formatDate(entry.recordedAt, locale)}
+                      </span>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
                       <p className="text-sm text-gray-500">

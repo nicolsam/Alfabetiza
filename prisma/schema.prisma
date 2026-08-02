@@ -228,8 +228,9 @@ model StudentAssessment {
   assessmentTypeId  String   @map("assessment_type_id")
   assessmentLevelId String   @map("assessment_level_id")
   userId            String   @map("user_id")
-  recordedAt        DateTime @default(now()) @map("recorded_at")
+  referenceMonth    DateTime @db.Date @map("reference_month")
   createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
   notes             String?
 
   student         Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -238,7 +239,8 @@ model StudentAssessment {
   assessmentLevel AssessmentLevel   @relation(fields: [assessmentLevelId], references: [id])
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([studentId, assessmentTypeId, recordedAt, createdAt])
+  @@unique([studentId, assessmentTypeId, referenceMonth])
+  @@index([studentId, assessmentTypeId, referenceMonth, createdAt])
   @@index([assessmentTypeId, assessmentLevelId])
   @@map("student_assessments")
 }

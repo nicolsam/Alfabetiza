@@ -33,10 +33,11 @@ import {
 import {
   buildMonthKey,
   getAvailableMonthOptions,
-  getDefaultAssessmentDateForMonth,
+  fromInputMonth,
   getMonthKey,
   getMonthPartFromMonthKey,
   getYearFromMonthKey,
+  toInputMonth,
 } from '@/lib/monthly-updates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -81,7 +82,7 @@ interface Student {
   class?: ClassRecord
   readingHistory: {
     id: string
-    recordedAt?: string
+    referenceMonth: string
     createdAt?: string
     readingLevel: { name: string; code: string; order: number }
   }[]
@@ -89,7 +90,7 @@ interface Student {
   monthStatus?: 'current' | 'past'
   selectedMonth?: string
   selectedAcademicYear?: number
-  latestAssessmentDate?: string | null
+  latestAssessmentMonth?: string | null
 }
 
 interface ReadingLevel {
@@ -149,7 +150,6 @@ export default function StudentsPage() {
   const selectedMonthPart = getMonthPartFromMonthKey(selectedMonth)
   const selectedAcademicYear = Number(selectedYear)
   const availableMonths = getAvailableMonthOptions(selectedAcademicYear)
-  const maxAssessmentDate = getDefaultAssessmentDateForMonth(getMonthKey())
 
   const handleMonthPartChange = (month: string) => {
     setSelectedMonth(buildMonthKey(month, selectedYear))
@@ -203,7 +203,7 @@ export default function StudentsPage() {
     setPage(1)
   }
 
-  const [updateLevel, setUpdateLevel] = useState({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })
+  const [updateLevel, setUpdateLevel] = useState({ studentId: '', readingLevelId: '', notes: '', referenceMonth: getMonthKey() })
 
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null)
@@ -421,7 +421,7 @@ export default function StudentsPage() {
         studentId: '',
         readingLevelId: '',
         notes: '',
-        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+        referenceMonth: getMonthKey(),
       })
       toast.info(tTours('demoNoSave'))
       return
@@ -435,11 +435,17 @@ export default function StudentsPage() {
       return
     }
 
-    const res = await fetch('/api/students/update', {
+    const submitLevel = (confirmReplace = false) => fetch('/api/students/update', {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(updateLevel),
+      body: JSON.stringify({ ...updateLevel, confirmReplace }),
     })
+    let res = await submitLevel()
+
+    if (res.status === 409) {
+      if (!window.confirm(t('confirmReplaceMonth', { month: updateLevel.referenceMonth }))) return
+      res = await submitLevel(true)
+    }
 
     if (res.ok) {
       clearClientGetCache('/api/students')
@@ -448,7 +454,7 @@ export default function StudentsPage() {
         studentId: '',
         readingLevelId: '',
         notes: '',
-        recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()),
+        referenceMonth: getMonthKey(),
       })
       await fetchData(true)
     } else {
@@ -759,7 +765,7 @@ export default function StudentsPage() {
                             studentId: student.id,
                             readingLevelId: '',
                             notes: '',
-                            recordedAt: getDefaultAssessmentDateForMonth(selectedMonth),
+                            referenceMonth: selectedMonth,
                           })
                         }}
                         className={`h-auto p-0 ${student.monthlyUpdateStatus === 'missing' ? 'text-amber-700' : 'text-blue-600'
@@ -904,12 +910,12 @@ export default function StudentsPage() {
                 rows={3}
               />
               <div className="space-y-1" data-tour="assessment-date-field">
-                <Label>{t('assessmentDate')}</Label>
+                <Label>{t('referenceMonth')}</Label>
                 <Input
-                  type="date"
-                  value={updateLevel.recordedAt}
-                  max={maxAssessmentDate}
-                  onChange={(e) => setUpdateLevel({ ...updateLevel, recordedAt: e.target.value })}
+                  type="month"
+                  value={toInputMonth(updateLevel.referenceMonth)}
+                  max={toInputMonth(getMonthKey())}
+                  onChange={(e) => setUpdateLevel({ ...updateLevel, referenceMonth: fromInputMonth(e.target.value) })}
                   required
                 />
               </div>
@@ -921,7 +927,7 @@ export default function StudentsPage() {
                   type="button"
                   variant="outline"
                   data-tour="assessment-cancel"
-                  onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', recordedAt: getDefaultAssessmentDateForMonth(getMonthKey()) })}
+                  onClick={() => setUpdateLevel({ studentId: '', readingLevelId: '', notes: '', referenceMonth: getMonthKey() })}
                   className="flex-1"
                 >
                   {tCommon('cancel')}
