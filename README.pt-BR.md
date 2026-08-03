@@ -4,6 +4,12 @@
 
 **Uma plataforma full-stack para acompanhar o desenvolvimento da leitura e identificar alunos que precisam de apoio.**
 
+[![Criado com Next.js](https://img.shields.io/badge/CRIADO_COM-NEXT.JS-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Criado com TypeScript](https://img.shields.io/badge/CRIADO_COM-TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Criado com PostgreSQL](https://img.shields.io/badge/CRIADO_COM-POSTGRESQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Testado com Playwright](https://img.shields.io/badge/TESTADO_COM-PLAYWRIGHT-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
+[![Criado com amor](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com/)
+
 [![Aplicação online](https://img.shields.io/badge/Aplicacao%20online-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://alfabetiza-app.vercel.app/)
 [![Documentação técnica](https://img.shields.io/badge/Documentacao%20tecnica-111827?style=for-the-badge&logo=readthedocs&logoColor=white)](docs/README.md)
 
@@ -11,7 +17,7 @@
 
 </div>
 
-## Visão geral
+## Sobre o Projeto
 
 O Alfabetiza é um produto independente criado para resolver um problema real relatado por uma professora: manter organizados os níveis de leitura dos alunos e compreender como a alfabetização evolui ao longo do tempo.
 
@@ -19,7 +25,22 @@ A aplicação substitui registros manuais fragmentados por um fluxo centralizado
 
 O projeto é planejado e desenvolvido de forma independente por [Nicolas Samuel](https://github.com/nicolsam).
 
-## Visão do produto
+## Sumário
+
+- [Capturas de Tela](#capturas-de-tela)
+- [Funcionalidades](#funcionalidades)
+- [Destaques de Engenharia](#destaques-de-engenharia)
+- [Arquitetura](#arquitetura)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Modelo de Domínio](#modelo-de-domínio)
+- [Estrutura de Pastas](#estrutura-de-pastas)
+- [Como Executar](#como-executar)
+- [Testes](#testes)
+- [Documentação](#documentação)
+- [Próximos Passos](#próximos-passos)
+- [Autor](#autor)
+
+## Capturas de Tela
 
 ### Painel de evolução da leitura
 
@@ -33,7 +54,7 @@ O painel resume a distribuição dos níveis de leitura, as atualizações mensa
 
 As ferramentas administrativas oferecem monitoramento de sessões, registros globais de auditoria e indicadores gerais de utilização. As imagens exibem apenas informações agregadas e não identificáveis.
 
-## Principais funcionalidades
+## Funcionalidades
 
 - **Acompanhamento mensal da leitura** — Mantém a evolução dos níveis em vez de armazenar somente a avaliação mais recente.
 - **Painéis de progresso** — Apresentam distribuições, melhorias, atualizações pendentes e alunos que precisam de atenção.
@@ -46,7 +67,7 @@ As ferramentas administrativas oferecem monitoramento de sessões, registros glo
 - **Auditoria e sessões** — Registra ações de alteração e permite acompanhar sessões ativas.
 - **Busca e paginação no servidor** — Mantém as telas de gestão responsivas à medida que a base cresce.
 
-## Destaques de engenharia
+## Destaques de Engenharia
 
 - Modelo relacional com escolas, usuários, papéis por escola, turmas, alunos, matrículas, tipos de avaliação, níveis de leitura e avaliações mensais.
 - Autorização baseada em papéis aplicada às operações protegidas da aplicação e da API.
@@ -68,7 +89,7 @@ Navegador
           └── PostgreSQL
 ```
 
-## Tecnologias
+## Tecnologias Utilizadas
 
 | Área | Tecnologias |
 | --- | --- |
@@ -80,7 +101,7 @@ Navegador
 | Testes | Vitest, Testing Library, Playwright |
 | Experiência do produto | TipTap, Driver.js, Sonner |
 
-## Modelo de domínio
+## Modelo de Domínio
 
 Os principais relacionamentos são organizados ao redor do contexto escolar:
 
@@ -96,7 +117,25 @@ Escola
 
 Essa estrutura permite que um usuário tenha papéis diferentes em escolas diferentes, preservando o histórico de matrículas e avaliações dos alunos.
 
-## Executando localmente
+## Estrutura de Pastas
+
+```text
+Alfabetiza/
+├── docs/                 # Manual bilíngue e imagens do projeto
+├── prisma/               # Schema, migrations e dados iniciais
+├── public/               # Arquivos estáticos
+├── src/
+│   ├── app/              # Páginas, rotas da API e layouts do App Router
+│   ├── components/       # Componentes reutilizáveis da interface
+│   ├── i18n/             # Configuração da internacionalização
+│   ├── lib/              # Autenticação, banco, auditoria e serviços
+│   └── messages/         # Traduções em inglês e português
+├── tests/                # Testes ponta a ponta com Playwright
+├── docker-compose.yml    # Serviço PostgreSQL local
+└── package.json          # Scripts e dependências
+```
+
+## Como Executar
 
 ### Pré-requisitos
 
@@ -143,7 +182,7 @@ O manual completo para desenvolvedores é mantido nos dois idiomas:
 
 O conteúdo aborda arquitetura, banco de dados, autenticação e sessões, comportamento da API, convenções de frontend, internacionalização, testes, fluxo de desenvolvimento, deploy e solução de problemas.
 
-## Estado do produto e próximos passos
+## Próximos Passos
 
 O Alfabetiza é um produto independente em estágio inicial, atualmente validando seu fluxo principal de acompanhamento da leitura. Entre as possíveis evoluções estão:
 

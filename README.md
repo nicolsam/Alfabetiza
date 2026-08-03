@@ -4,6 +4,12 @@
 
 **A full-stack literacy tracking platform that helps educators monitor reading development and identify students who need support.**
 
+[![Built with Next.js](https://img.shields.io/badge/BUILT_WITH-NEXT.JS-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Built with TypeScript](https://img.shields.io/badge/BUILT_WITH-TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Built with PostgreSQL](https://img.shields.io/badge/BUILT_WITH-POSTGRESQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Tested with Playwright](https://img.shields.io/badge/TESTED_WITH-PLAYWRIGHT-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
+[![Built with love](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com/)
+
 [![Live Application](https://img.shields.io/badge/Live%20Application-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://alfabetiza-app.vercel.app/)
 [![Developer Documentation](https://img.shields.io/badge/Developer%20Docs-111827?style=for-the-badge&logo=readthedocs&logoColor=white)](docs/README.md)
 
@@ -11,7 +17,7 @@
 
 </div>
 
-## Overview
+## About the Project
 
 Alfabetiza is an independent product created to solve a real problem reported by a teacher: keeping students' reading levels organized and understanding how their literacy skills change over time.
 
@@ -19,7 +25,22 @@ The application replaces fragmented manual records with a centralized workflow f
 
 The project is designed and developed independently by [Nicolas Samuel](https://github.com/nicolsam).
 
-## Product Preview
+## Summary
+
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Engineering Highlights](#engineering-highlights)
+- [Architecture](#architecture)
+- [Technologies Used](#technologies-used)
+- [Domain Model](#domain-model)
+- [Folder Structure](#folder-structure)
+- [How to Run](#how-to-run)
+- [Tests](#tests)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Author](#author)
+
+## Screenshots
 
 ### Reading progress dashboard
 
@@ -33,7 +54,7 @@ The dashboard summarizes the distribution of reading levels, monthly updates and
 
 Administrative tools provide session monitoring, platform-wide audit logs and high-level usage indicators. The screenshots only contain aggregate, non-identifying information.
 
-## Core Features
+## Features
 
 - **Monthly literacy tracking** — Records reading levels over time instead of keeping only the latest assessment.
 - **Progress dashboards** — Visualizes distributions, improvements, pending updates and students who need attention.
@@ -68,7 +89,7 @@ Browser
           └── PostgreSQL
 ```
 
-## Technology Stack
+## Technologies Used
 
 | Area | Technologies |
 | --- | --- |
@@ -96,7 +117,25 @@ School
 
 This structure allows a user to have different roles in different schools while preserving student enrollment and assessment history.
 
-## Getting Started
+## Folder Structure
+
+```text
+Alfabetiza/
+├── docs/                 # Bilingual developer handbook and project images
+├── prisma/               # Database schema, migrations and seed data
+├── public/               # Static assets
+├── src/
+│   ├── app/              # App Router pages, API routes and layouts
+│   ├── components/       # Reusable interface components
+│   ├── i18n/             # Internationalization configuration
+│   ├── lib/              # Auth, database, audit and shared services
+│   └── messages/         # English and Portuguese translations
+├── tests/                # Playwright end-to-end tests
+├── docker-compose.yml    # Local PostgreSQL service
+└── package.json          # Scripts and dependencies
+```
+
+## How to Run
 
 ### Prerequisites
 
@@ -143,7 +182,7 @@ The complete developer handbook is maintained in both languages:
 
 It covers project architecture, database design, authentication and sessions, API behavior, frontend conventions, internationalization, testing, development workflow, deployment and troubleshooting.
 
-## Product Status and Roadmap
+## Roadmap
 
 Alfabetiza is an early-stage independent product currently validating its core literacy-tracking workflow. Planned directions include:
 
